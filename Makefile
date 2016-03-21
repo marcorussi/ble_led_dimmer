@@ -24,7 +24,7 @@
 
 
 #ATTENTON: modify following names and paths as required
-PROJECT_NAME := nrf51_led_dimmer
+PROJECT_NAME := ble_led_dimmer
 NRFJPROG_PATH := ./tools
 SDK_PATH := /opt/nRF51_SDK_10.0.0_dc26b5e
 LINKER_SCRIPT := led_dimmer_nrf51.ld

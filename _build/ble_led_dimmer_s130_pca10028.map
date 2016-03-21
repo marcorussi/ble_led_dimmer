@@ -1241,7 +1241,7 @@ END GROUP
                 0x20007800                __StackLimit = (__StackTop - SIZEOF (.stack_dummy))
                 0x20008000                PROVIDE (__stack, __StackTop)
                 0x00000001                ASSERT ((__StackLimit >= __HeapLimit), region RAM overflowed with stack)
-OUTPUT(_build/nrf51_led_dimmer_s130_pca10028.out elf32-littlearm)
+OUTPUT(_build/ble_led_dimmer_s130_pca10028.out elf32-littlearm)
 
 .ARM.attributes
                 0x00000000       0x28
