@@ -1,0 +1,368 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) [2015] [Marco Russi]
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+*/
+
+
+/* 
+	ATTENTION:
+	LIGHT characteristic values are stored and have default values but are not used.
+   	They are only read upon reception of new values. Then they are stored again just for logging. 
+*/
+
+
+/*
+	TODO: consider to check min and max values. Defines are already defined.
+*/
+
+
+/* ------------- Inclusions --------------- */
+
+#include <string.h>
+#include "nordic_common.h"
+#include "nrf.h"
+#include "nrf_gpio.h"
+#include "ble_srv_common.h"
+#include "memory.h"
+
+#include "dimmer_service.h"
+
+
+
+
+/* ------------- Local definitions --------------- */
+
+/* The UUID of the LIGHT Characteristic */
+#define BLE_UUID_DIMMER_LIGHT_CHAR				0x0005 
+
+/* The UUID of the PRESET Characteristic */
+#define BLE_UUID_DIMMER_PRESET_CHAR				0x000A   
+
+/* User vendor specific UUID */
+#define DIMMER_BASE_UUID                  		{{0x8A, 0xAF, 0xA6, 0xC2, 0x3A, 0x32, 0x8F, 0x84, 0x75, 0x4F, 0xF3, 0x02, 0x01, 0x50, 0x65, 0x20}} 
+
+#if 0
+/* Default RGB channels and fade values */
+#define DEF_RED_PWM_PERCENT						0x32
+#define DEF_GREEN_PWM_PERCENT					0x32
+#define DEF_BLUE_PWM_PERCENT					0x32
+#define DEF_WHITE_PWM_PERCENT					0x32
+#define DEF_FADE_PWM_PERCENT					0x32
+#endif
+
+/* Minimum and maximum range values for LIGHT timeout */
+#define MIN_PWM_VALUE_PERCENT					0
+#define MAX_PWM_VALUE_PERCENT					100
+
+/* Minimum and maximum range values for PRESET timeout */
+#define MIN_FADE_VALUE_PERCENT_S				0
+#define MAX_FADE_VALUE_PERCENT_S				200
+
+
+
+
+/* ------------- Exported variables --------------- */
+
+uint8_t char_values[BLE_DIMMER_SERVICE_CHARS_LENGTH];
+
+#if 0
+/* Default characteristic values */
+const uint8_t default_values[BLE_DIMMER_SERVICE_CHARS_LENGTH] = 
+{
+	DEF_RED_PWM_PERCENT,		/* Light - R */						
+	DEF_GREEN_PWM_PERCENT,		/* Light - G */
+	DEF_BLUE_PWM_PERCENT,		/* Light - B */
+	DEF_WHITE_PWM_PERCENT,		/* Light - W */
+	DEF_FADE_PWM_PERCENT,		/* Light - Fade */
+	30,		/* Preset 1 - R */						
+	30,		/* Preset 1 - G */
+	30,		/* Preset 1 - B */
+	30,		/* Preset 1 - W */
+	100,		/* Preset 1 - Fade */
+	95,		/* Preset 2 - R */						
+	95,		/* Preset 2 - G */
+	95,		/* Preset 2 - B */
+	95,		/* Preset 2 - W */
+	20,		/* Preset 2 - Fade */
+	DEF_RED_PWM_PERCENT,		/* Preset 3 - R */						
+	DEF_GREEN_PWM_PERCENT,		/* Preset 3 - G */
+	DEF_BLUE_PWM_PERCENT,		/* Preset 3 - B */
+	DEF_WHITE_PWM_PERCENT,		/* Preset 3 - W */
+	DEF_FADE_PWM_PERCENT,		/* Preset 3 - Fade */
+	DEF_RED_PWM_PERCENT,		/* Preset 4 - R */						
+	DEF_GREEN_PWM_PERCENT,		/* Preset 4 - G */
+	DEF_BLUE_PWM_PERCENT,		/* Preset 4 - B */
+	DEF_WHITE_PWM_PERCENT,		/* Preset 4 - W */
+	DEF_FADE_PWM_PERCENT,		/* Preset 4 - Fade */
+	DEF_RED_PWM_PERCENT,		/* Preset 5 - R */						
+	DEF_GREEN_PWM_PERCENT,		/* Preset 5 - G */
+	DEF_BLUE_PWM_PERCENT,		/* Preset 5 - B */
+	DEF_WHITE_PWM_PERCENT,		/* Preset 5 - W */
+	DEF_FADE_PWM_PERCENT,		/* Preset 5 - Fade */
+	DEF_RED_PWM_PERCENT,		/* Preset 6 - R */						
+	DEF_GREEN_PWM_PERCENT,		/* Preset 6 - G */
+	DEF_BLUE_PWM_PERCENT,		/* Preset 6 - B */
+	DEF_WHITE_PWM_PERCENT,		/* Preset 6 - W */
+	DEF_FADE_PWM_PERCENT,		/* Preset 6 - Fade */
+};
+#endif
+
+
+
+/* ------------- Local functions prototypes --------------- */
+
+static void 	on_connect(ble_dimmer_st *, ble_evt_t *);
+static void 	on_disconnect(ble_dimmer_st *, ble_evt_t *);
+static void 	on_write(ble_dimmer_st *, ble_evt_t *);
+static uint32_t	char_add(ble_dimmer_st *, ble_gatts_char_handles_t *, bool, uint8_t, uint16_t, uint8_t *);
+
+
+
+
+/* ------------- Local functions --------------- */
+
+/* Function for handling the BLE_GAP_EVT_CONNECTED event from the SoftDevice */
+static void on_connect(ble_dimmer_st * p_dimmer, ble_evt_t * p_ble_evt)
+{
+	/* store connection handle */
+    p_dimmer->conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+}
+
+
+/* Function for handling the BLE_GAP_EVT_DISCONNECTED event from the SoftDevice */
+static void on_disconnect(ble_dimmer_st * p_dimmer, ble_evt_t * p_ble_evt)
+{
+    UNUSED_PARAMETER(p_ble_evt);
+	/* reset connection handle */
+    p_dimmer->conn_handle = BLE_CONN_HANDLE_INVALID;
+}
+
+
+/* Function for handling the BLE_GATTS_EVT_WRITE event from the SoftDevice */
+static void on_write(ble_dimmer_st * p_dimmer, ble_evt_t * p_ble_evt)
+{
+    ble_gatts_evt_write_t * p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
+
+	/* if data pointer is valid and length is greater than 0 */
+	if((p_evt_write->data != NULL)
+    && (p_evt_write->len > 0))
+	{
+		if(p_evt_write->handle == p_dimmer->light_charac_handles.value_handle)
+		{
+			/* TODO: consider to send memory result to upper layers */
+			/* update field in the persistent memory, just for log */
+			memory_update_field(BLE_DIMMER_LIGHT_CHAR_POS, p_evt_write->data, p_evt_write->len);
+
+			/* call previously registered callback function for CMD */
+			p_dimmer->data_handler(p_dimmer);
+		}
+		else if(p_evt_write->handle == p_dimmer->preset_charac_handles.value_handle)
+		{
+			/* TODO: consider to send memory result to upper layers */
+			/* update field in the persistent memory */
+			memory_update_field(BLE_DIMMER_PRESET_CHAR_POS, p_evt_write->data, p_evt_write->len);
+		}
+		else
+		{
+			/* handle not found: do nothing */
+		}
+	}
+	else
+	{
+		/* discard it */
+	}
+}
+
+
+/* Function for adding same type characteristic */
+static uint32_t char_add(	ble_dimmer_st * p_dimmer, 
+							ble_gatts_char_handles_t * p_char_handle, 
+							bool read_enabled, 
+							uint8_t char_value_length, 
+							uint16_t char_uuid,
+							uint8_t *p_value)
+{
+    ble_gatts_char_md_t char_md;
+    ble_gatts_attr_t    attr_char_value;
+    ble_uuid_t          ble_uuid;
+    ble_gatts_attr_md_t attr_md;
+
+    memset(&char_md, 0, sizeof(char_md));
+
+	/* if read feature is requested */
+	if(true == read_enabled)
+	{
+		/* set read flag */
+		char_md.char_props.read = 1;
+	}
+	else
+	{
+		/* do not set read flag */
+	}
+    char_md.char_props.write         = 1;
+    char_md.char_props.write_wo_resp = 1;
+    char_md.p_char_user_desc         = NULL;
+    char_md.p_char_pf                = NULL;
+    char_md.p_user_desc_md           = NULL;
+    char_md.p_cccd_md                = NULL;
+    char_md.p_sccd_md                = NULL;
+
+    ble_uuid.type = p_dimmer->uuid_type;
+    ble_uuid.uuid = char_uuid;
+
+    memset(&attr_md, 0, sizeof(attr_md));
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
+
+    attr_md.vloc    = BLE_GATTS_VLOC_USER;	/* ATTENTION: user must provide a valid global variable */
+    attr_md.rd_auth = 0;
+    attr_md.wr_auth = 0;
+    attr_md.vlen    = 0;
+
+    memset(&attr_char_value, 0, sizeof(attr_char_value));
+
+    attr_char_value.p_uuid    = &ble_uuid;
+    attr_char_value.p_attr_md = &attr_md;
+    attr_char_value.init_len  = char_value_length;
+    attr_char_value.init_offs = 0;
+    attr_char_value.max_len   = char_value_length;
+	attr_char_value.p_value   = p_value;
+
+    return sd_ble_gatts_characteristic_add(p_dimmer->service_handle,
+                                           &char_md,
+                                           &attr_char_value,
+                                           p_char_handle);
+}
+
+
+
+
+/* ------------- Exported functions --------------- */
+
+/* Function for handling received events for DIMMER service */
+void ble_dimmer_on_ble_evt(ble_dimmer_st * p_dimmer, ble_evt_t * p_ble_evt)
+{
+    if ((p_dimmer == NULL) || (p_ble_evt == NULL))
+    {
+        return;
+    }
+
+    switch (p_ble_evt->header.evt_id)
+    {
+        case BLE_GAP_EVT_CONNECTED:
+            on_connect(p_dimmer, p_ble_evt);
+            break;
+
+        case BLE_GAP_EVT_DISCONNECTED:
+            on_disconnect(p_dimmer, p_ble_evt);
+            break;
+
+        case BLE_GATTS_EVT_WRITE:
+            on_write(p_dimmer, p_ble_evt);
+            break;
+
+        default:
+            // No implementation needed.
+            break;
+    }
+}
+
+
+/* Function to init DIMMER service */
+uint32_t ble_dimmer_init(ble_dimmer_st * p_dimmer, const ble_dimmer_init_st * p_dimmer_init)
+{
+    uint32_t err_code;
+    ble_uuid_t ble_uuid;
+    ble_uuid128_t dimmer_base_uuid = DIMMER_BASE_UUID;
+
+    if ((p_dimmer == NULL) || (p_dimmer_init == NULL))
+    {
+        return NRF_ERROR_NULL;
+    }
+#if 0
+	/* if persistent memory is initialised successfully */
+	if(true == memory_init(default_values))
+	{
+		/* wait for completion */
+		while(false != memory_is_busy());
+	}
+	else
+	{
+		/* very bad, use default setting as recovery */
+	}
+#endif
+    /* Initialize the service structure */
+    p_dimmer->conn_handle             = BLE_CONN_HANDLE_INVALID;
+    p_dimmer->data_handler            = p_dimmer_init->data_handler;
+
+    /* Adding proprietary Service to SoftDevice] */
+    err_code = sd_ble_uuid_vs_add(&dimmer_base_uuid, &p_dimmer->uuid_type);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+
+    ble_uuid.type = p_dimmer->uuid_type;
+    ble_uuid.uuid = BLE_UUID_DIMMER_SERVICE;
+
+    /* Adding proprietary Service to SoftDevice */
+    err_code = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY,
+                                        &ble_uuid,
+                                        &p_dimmer->service_handle);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+
+    /* Add the LIGHT Characteristic - Read/Write */
+    err_code = char_add(p_dimmer, 
+						&p_dimmer->light_charac_handles, 
+						true, 
+						BLE_DIMMER_LIGHT_CHAR_LENGTH, 
+						BLE_UUID_DIMMER_LIGHT_CHAR, 
+						(uint8_t *)&char_values[BLE_DIMMER_LIGHT_CHAR_POS]);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+
+	/* Add the PRESET Characteristic - Read/Write */
+    err_code = char_add(p_dimmer, 
+						&p_dimmer->preset_charac_handles, 
+						true, 
+						BLE_DIMMER_PRESET_CHAR_LENGTH, 
+						BLE_UUID_DIMMER_PRESET_CHAR, 
+						(uint8_t *)&char_values[BLE_DIMMER_PRESET_CHAR_POS]);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+
+	return NRF_SUCCESS;
+}
+
+
+
+
+/* End of file */
+
+
