@@ -26,7 +26,7 @@
 #ATTENTON: modify following names and paths as required
 PROJECT_NAME := ble_led_dimmer
 NRFJPROG_PATH := ./tools
-SDK_PATH := /opt/nRF51_SDK_10.0.0_dc26b5e
+SDK_PATH := /opt/nRF5_SDK_11.0.0_89a8197
 LINKER_SCRIPT := led_dimmer_nrf51.ld
 GNU_INSTALL_ROOT := /home/marco/ARMToolchain/gcc-arm-none-eabi-4_9-2015q2
 GNU_VERSION := 4.9.3
@@ -35,7 +35,6 @@ GNU_PREFIX := arm-none-eabi
 export OUTPUT_FILENAME
 
 SDK_COMPONENTS_PATH = $(SDK_PATH)/components
-SDK_EXAMPLES_PATH = $(SDK_PATH)/examples
 TEMPLATE_PATH = $(SDK_COMPONENTS_PATH)/toolchain/gcc
 OUTPUT_FILENAME = $(PROJECT_NAME)_s130_pca10028
 
@@ -76,10 +75,12 @@ $(abspath memory.c) \
 $(abspath led_strip.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/pwm/app_pwm.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/util/app_error.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/libraries/util/app_error_weak.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/fifo/app_fifo.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/timer/app_timer.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/trace/app_trace.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/util/nrf_assert.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/libraries/util/app_util_platform.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/uart/retarget.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/uart/nrf_drv_uart.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/delay/nrf_delay.c) \
@@ -90,7 +91,6 @@ $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/nrf_soc_nosd/nrf_soc.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/ppi/nrf_drv_ppi.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/pstorage/pstorage.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/ble/common/ble_advdata.c) \
-$(abspath $(SDK_COMPONENTS_PATH)/ble/ble_advertising/ble_advertising.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/ble/common/ble_conn_params.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/ble/common/ble_srv_common.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/ble/ble_services/ble_nus/ble_nus.c) \
@@ -104,11 +104,10 @@ ASM_SOURCE_FILES  = $(abspath $(SDK_COMPONENTS_PATH)/toolchain/gcc/gcc_startup_n
 INC_PATHS  = -I$(abspath config)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/util)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/toolchain/gcc)
-INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/ppi)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/uart)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/ppi)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/ble/common)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/common)
-INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/ble/ble_advertising)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/trace)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/fifo)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/uart)
@@ -118,13 +117,16 @@ INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/timer)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/gpiote)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/delay)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/pstorage)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/fstorage)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/toolchain)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/device)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/softdevice/common/softdevice_handler)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/timer)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/experimental_section_vars)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/ble/ble_services/ble_nus)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/hal)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/pwm)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/toolchain/CMSIS/Include)
 
 OBJECT_DIRECTORY = _build
 LISTING_DIRECTORY = $(OBJECT_DIRECTORY)
@@ -281,5 +283,5 @@ memrd: $(MAKECMDGOALS)
 
 ## Flash softdevice
 flash_softdevice: 
-	@echo Flashing: s130_nrf51_1.0.0_softdevice.hex
-	$(NRFJPROG_PATH)/nrfjprog.sh --flash-softdevice $(SDK_COMPONENTS_PATH)/softdevice/s130/hex/s130_nrf51_1.0.0_softdevice.hex
+	@echo Flashing: s130_nrf51_2.0.0_softdevice.hex
+	$(NRFJPROG_PATH)/nrfjprog.sh --flash-softdevice $(SDK_COMPONENTS_PATH)/softdevice/s130/hex/s130_nrf51_2.0.0_softdevice.hex

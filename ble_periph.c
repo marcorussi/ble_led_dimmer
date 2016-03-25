@@ -50,8 +50,16 @@
 
 
 
+/* ----------------------- Local defines ------------------------ */ 
 
-/* ----------------------- Local defines ------------------------ */                                      
+/* Low frequency clock source to be used by the SoftDevice */
+#define NRF_CLOCK_LFCLKSRC      {.source        = NRF_CLOCK_LF_SRC_XTAL,            \
+                                 .rc_ctiv       = 0,                                \
+                                 .rc_temp_ctiv  = 0,                                \
+                                 .xtal_accuracy = NRF_CLOCK_LF_XTAL_ACCURACY_20_PPM}
+
+#define CENTRAL_LINK_COUNT               0                                          /**< Number of central links used by the application. When changing this number remember to adjust the RAM settings*/
+#define PERIPHERAL_LINK_COUNT            1                                          /**< Number of peripheral links used by the application. When changing this number remember to adjust the RAM settings*/                                     
 
 /* Name of device. Will be included in the advertising data */
 #define DEVICE_NAME                      	"Dimmer"  
@@ -183,11 +191,12 @@ static void ble_periph_adv_set_data(void);
    Parameters:
    - nrf_error: Error code containing information about what went wrong. 
 */
+#if 0
 static void service_error_handler(uint32_t nrf_error)
 {
     APP_ERROR_HANDLER(nrf_error);
 }
-
+#endif
 
 /* dimmer data handler function */
 static void dimmer_data_handler(ble_dimmer_st * p_dimmer)
@@ -386,16 +395,23 @@ static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
 static void ble_stack_init(void)
 {
     uint32_t err_code;
-
+    
+    nrf_clock_lf_cfg_t clock_lf_cfg = NRF_CLOCK_LFCLKSRC;
+    
     /* Initialize the SoftDevice handler module. */
-    SOFTDEVICE_HANDLER_INIT(NRF_CLOCK_LFCLKSRC_RC_250_PPM_TEMP_4000MS_CALIBRATION, NULL);
+    SOFTDEVICE_HANDLER_INIT(&clock_lf_cfg, NULL);
 
-    /* Enable BLE stack. */
     ble_enable_params_t ble_enable_params;
-    memset(&ble_enable_params, 0, sizeof(ble_enable_params));
-
-    ble_enable_params.gatts_enable_params.service_changed = IS_SRVC_CHANGED_CHARACT_PRESENT;
-    err_code = sd_ble_enable(&ble_enable_params);
+    err_code = softdevice_enable_get_default_config(CENTRAL_LINK_COUNT,
+                                                    PERIPHERAL_LINK_COUNT,
+                                                    &ble_enable_params);
+    APP_ERROR_CHECK(err_code);
+    
+    /* Check the ram settings against the used number of links */
+    CHECK_RAM_START_ADDR(CENTRAL_LINK_COUNT,PERIPHERAL_LINK_COUNT);
+    
+    /* Enable BLE stack. */
+    err_code = softdevice_enable(&ble_enable_params);
     APP_ERROR_CHECK(err_code);
 
     /* Register with the SoftDevice handler module for BLE events. */

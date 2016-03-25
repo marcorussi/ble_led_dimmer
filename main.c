@@ -121,7 +121,7 @@ const uint8_t default_values[BLE_DIMMER_SERVICE_CHARS_LENGTH] =
 
 /* ---------------- Local functions prototype --------------------- */   
 
-static void tick_timer_function(void * p_context);                             
+//static void tick_timer_function(void * p_context);                             
 
 
 
@@ -138,14 +138,15 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
 }
 
-
+#if 0
 /* Function for placing the application in low power state while waiting for events */
 static void power_manage(void)
 {
     uint32_t err_code = sd_app_evt_wait();
     APP_ERROR_CHECK(err_code);
 }
-
+#endif
+#if 0
 uint8_t data_byte = 1;
 /* Tick timer timeout handler function */
 static void tick_timer_function(void * p_context)
@@ -166,7 +167,7 @@ static void tick_timer_function(void * p_context)
 
 	led_update_light(data_byte);
 }
-
+#endif
 
 /* Application main function */
 int main(void)
@@ -183,10 +184,10 @@ int main(void)
 	nrf_gpio_pin_write(24, 1);
 */
 	/* init NUS peripheral connection */
-	//ble_periph_init();
+	ble_periph_init();
 
 	/* init connection */
-	conn_init();
+	//conn_init();
 
 	/* if persistent memory is initialised successfully */
 	if(true == memory_init(default_values))
@@ -203,10 +204,10 @@ int main(void)
 	led_light_init();
 
 	/* start avertising */
-	//ble_periph_adv_start();
+	ble_periph_adv_start();
 
 	/* start scan */
-	conn_start_scan();
+	//conn_start_scan();
 
 	/* init tick timer (for managing timeouts) */
 	//err_code = app_timer_create(&tick_timer, APP_TIMER_MODE_REPEATED, &tick_timer_function);
