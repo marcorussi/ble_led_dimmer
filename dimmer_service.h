@@ -52,14 +52,20 @@
 /* PRESET Characteristic value length in bytes */
 #define BLE_DIMMER_PRESET_CHAR_LENGTH				(BLE_PRESET_NUM_OF_BYTES * BLE_PRESET_NUM_OF_VALUES)
 
+/* Length of each DFU Upgrade in bytes */
+#define BLE_DIMMER_DFU_CHAR_LENGTH					1	
+
 /* Total characteristics length in bytes */
-#define BLE_DIMMER_SERVICE_CHARS_LENGTH				(BLE_DIMMER_LIGHT_CHAR_LENGTH + BLE_DIMMER_PRESET_CHAR_LENGTH)
+#define BLE_DIMMER_SERVICE_CHARS_LENGTH				(BLE_DIMMER_LIGHT_CHAR_LENGTH + BLE_DIMMER_PRESET_CHAR_LENGTH + BLE_DIMMER_DFU_CHAR_LENGTH)
 
 /* LIGHT Characteristic value position in bytes */
 #define BLE_DIMMER_LIGHT_CHAR_POS					0
 
 /* PRESET Characteristic value position in bytes */
 #define BLE_DIMMER_PRESET_CHAR_POS					5
+
+/* DFU UPGRADE Characteristic value position in bytes */
+#define BLE_DIMMER_DFU_CHAR_POS						35
 
 
 
@@ -87,8 +93,9 @@ struct ble_dimmer_s
 {
     uint8_t                  	uuid_type;          	/* UUID type for DIMMER Service Base UUID. */
     uint16_t                 	service_handle;			/* Handle of DIMMER Service. */
-	ble_gatts_char_handles_t 	light_charac_handles;	/* Handles for LIGHT characteristic. */
-	ble_gatts_char_handles_t	preset_charac_handles;	/* Handles for PRESET characteristic. */
+	ble_gatts_char_handles_t 	light_charac_handles;	/* Handle for LIGHT characteristic. */
+	ble_gatts_char_handles_t	preset_charac_handles;	/* Handle for PRESET characteristic. */
+	ble_gatts_char_handles_t	dfu_charac_handles;		/* Handle for rebooting into DFU Upgrade */
     uint16_t                 	conn_handle;			/* Handle of the current connection. BLE_CONN_HANDLE_INVALID if not in a connection. */
     ble_dimmer_data_handler_st	data_handler;			/* Event handler to be called for handling received data. */
 };

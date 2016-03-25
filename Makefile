@@ -36,7 +36,7 @@ export OUTPUT_FILENAME
 
 SDK_COMPONENTS_PATH = $(SDK_PATH)/components
 TEMPLATE_PATH = $(SDK_COMPONENTS_PATH)/toolchain/gcc
-OUTPUT_FILENAME = $(PROJECT_NAME)_s130_pca10028
+OUTPUT_FILENAME = $(PROJECT_NAME)_s130
 
 MAKEFILE_NAME := $(MAKEFILE_LIST)
 MAKEFILE_DIR := $(dir $(MAKEFILE_NAME) ) 
@@ -107,6 +107,8 @@ INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/toolchain/gcc)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/uart)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/ppi)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/ble/common)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/softdevice/s130/headers)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/softdevice/s130/headers/nrf51)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/common)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/trace)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/fifo)
@@ -127,6 +129,7 @@ INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/ble/ble_services/ble_nus)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/hal)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/pwm)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/toolchain/CMSIS/Include)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/bootloader_dfu)
 
 OBJECT_DIRECTORY = _build
 LISTING_DIRECTORY = $(OBJECT_DIRECTORY)

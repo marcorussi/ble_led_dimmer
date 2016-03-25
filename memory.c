@@ -56,7 +56,7 @@ typedef enum
 /* ------------- Local defines --------------- */
 
 /* Validity signature for default value */
-#define MEM_DEFAULT_SIGNATURE						0x11223355
+#define MEM_DEFAULT_SIGNATURE						0x00224466
 
 /* Signature length in bytes */
 #define MEM_SIGNATURE_LENGTH_BYTES					4
