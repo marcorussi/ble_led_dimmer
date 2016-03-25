@@ -26,9 +26,11 @@
 
 /* ------------------ Exported functions declaration ----------------------- */
 
-extern void ble_periph_init			(void);
-extern void ble_periph_adv_start	(void);
-extern void ble_periph_adv_stop		(void);
+extern void ble_man_init		(void);
+extern void ble_man_scan_start	(void);
+extern void ble_man_scan_stop	(void);
+extern void ble_man_adv_start	(void);
+extern void ble_man_adv_stop	(void);
 
 
 

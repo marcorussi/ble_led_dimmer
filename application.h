@@ -22,16 +22,26 @@
 */
 
 
-/* ---------- Exported functions prototypes ----------- */
+/* ------------- Inclusions --------------- */
 
-extern void conn_init();
-extern void conn_start_scan(void);
-extern void conn_stop_scan(void);
+#include <stdint.h>
+#include <stdbool.h>
+
+
+
+
+/* ---------------- Exported functions prototypes --------------------- */   
+
+extern void application_on_conn		(void);
+extern void application_on_disconn	(void);
+extern void application_init		(void);
+extern void application_run			(void);
 
 
 
 
 /* End of file */
+
 
 
 

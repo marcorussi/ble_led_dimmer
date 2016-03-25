@@ -59,15 +59,6 @@
 /* User vendor specific UUID */
 #define DIMMER_BASE_UUID                  		{{0x8A, 0xAF, 0xA6, 0xC2, 0x3A, 0x32, 0x8F, 0x84, 0x75, 0x4F, 0xF3, 0x02, 0x01, 0x50, 0x65, 0x20}} 
 
-#if 0
-/* Default RGB channels and fade values */
-#define DEF_RED_PWM_PERCENT						0x32
-#define DEF_GREEN_PWM_PERCENT					0x32
-#define DEF_BLUE_PWM_PERCENT					0x32
-#define DEF_WHITE_PWM_PERCENT					0x32
-#define DEF_FADE_PWM_PERCENT					0x32
-#endif
-
 /* Minimum and maximum range values for LIGHT timeout */
 #define MIN_PWM_VALUE_PERCENT					0
 #define MAX_PWM_VALUE_PERCENT					100
@@ -83,47 +74,6 @@
 
 uint8_t char_values[BLE_DIMMER_SERVICE_CHARS_LENGTH];
 
-#if 0
-/* Default characteristic values */
-const uint8_t default_values[BLE_DIMMER_SERVICE_CHARS_LENGTH] = 
-{
-	DEF_RED_PWM_PERCENT,		/* Light - R */						
-	DEF_GREEN_PWM_PERCENT,		/* Light - G */
-	DEF_BLUE_PWM_PERCENT,		/* Light - B */
-	DEF_WHITE_PWM_PERCENT,		/* Light - W */
-	DEF_FADE_PWM_PERCENT,		/* Light - Fade */
-	30,		/* Preset 1 - R */						
-	30,		/* Preset 1 - G */
-	30,		/* Preset 1 - B */
-	30,		/* Preset 1 - W */
-	100,		/* Preset 1 - Fade */
-	95,		/* Preset 2 - R */						
-	95,		/* Preset 2 - G */
-	95,		/* Preset 2 - B */
-	95,		/* Preset 2 - W */
-	20,		/* Preset 2 - Fade */
-	DEF_RED_PWM_PERCENT,		/* Preset 3 - R */						
-	DEF_GREEN_PWM_PERCENT,		/* Preset 3 - G */
-	DEF_BLUE_PWM_PERCENT,		/* Preset 3 - B */
-	DEF_WHITE_PWM_PERCENT,		/* Preset 3 - W */
-	DEF_FADE_PWM_PERCENT,		/* Preset 3 - Fade */
-	DEF_RED_PWM_PERCENT,		/* Preset 4 - R */						
-	DEF_GREEN_PWM_PERCENT,		/* Preset 4 - G */
-	DEF_BLUE_PWM_PERCENT,		/* Preset 4 - B */
-	DEF_WHITE_PWM_PERCENT,		/* Preset 4 - W */
-	DEF_FADE_PWM_PERCENT,		/* Preset 4 - Fade */
-	DEF_RED_PWM_PERCENT,		/* Preset 5 - R */						
-	DEF_GREEN_PWM_PERCENT,		/* Preset 5 - G */
-	DEF_BLUE_PWM_PERCENT,		/* Preset 5 - B */
-	DEF_WHITE_PWM_PERCENT,		/* Preset 5 - W */
-	DEF_FADE_PWM_PERCENT,		/* Preset 5 - Fade */
-	DEF_RED_PWM_PERCENT,		/* Preset 6 - R */						
-	DEF_GREEN_PWM_PERCENT,		/* Preset 6 - G */
-	DEF_BLUE_PWM_PERCENT,		/* Preset 6 - B */
-	DEF_WHITE_PWM_PERCENT,		/* Preset 6 - W */
-	DEF_FADE_PWM_PERCENT,		/* Preset 6 - Fade */
-};
-#endif
 
 
 
@@ -281,7 +231,7 @@ void ble_dimmer_on_ble_evt(ble_dimmer_st * p_dimmer, ble_evt_t * p_ble_evt)
             break;
 
         default:
-            // No implementation needed.
+            /* No implementation needed. */
             break;
     }
 }
@@ -298,18 +248,7 @@ uint32_t ble_dimmer_init(ble_dimmer_st * p_dimmer, const ble_dimmer_init_st * p_
     {
         return NRF_ERROR_NULL;
     }
-#if 0
-	/* if persistent memory is initialised successfully */
-	if(true == memory_init(default_values))
-	{
-		/* wait for completion */
-		while(false != memory_is_busy());
-	}
-	else
-	{
-		/* very bad, use default setting as recovery */
-	}
-#endif
+
     /* Initialize the service structure */
     p_dimmer->conn_handle             = BLE_CONN_HANDLE_INVALID;
     p_dimmer->data_handler            = p_dimmer_init->data_handler;
