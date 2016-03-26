@@ -60,7 +60,7 @@
                                  		 	 .xtal_accuracy = 0}
 
 /* Number of central links used by the application. When changing this number remember to adjust the RAM settings */
-#define CENTRAL_LINK_COUNT              	0     
+#define CENTRAL_LINK_COUNT              	1   
 
 /* Number of peripheral links used by the application. When changing this number remember to adjust the RAM settings */
 #define PERIPHERAL_LINK_COUNT            	1                                          
