@@ -22,6 +22,8 @@
 
 #TODO: consider to remove UART
 
+#ATTENTON: comment the following define for optimized release firmware; not suitable for debug
+DEBUG := 1
 
 #ATTENTON: modify following names and paths as required
 PROJECT_NAME := ble_led_dimmer
@@ -149,10 +151,13 @@ CFLAGS += -Wall -Werror -O3
 CFLAGS += -mfloat-abi=soft
 CFLAGS += -DS130
 CFLAGS += -DSOFTDEVICE_PRESENT
-#
 # keep every function in separate section. This will allow linker to dump unused functions
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
 CFLAGS += -fno-builtin --short-enums
+# build for debugging if needed
+ifdef DEBUG
+CFLAGS += -g -O0
+endif
 
 # keep every function in separate section. This will allow linker to dump unused functions
 LDFLAGS += -Xlinker -Map=$(LISTING_DIRECTORY)/$(OUTPUT_FILENAME).map
@@ -189,8 +194,6 @@ help:
 	@echo 	cleanobj: clean object files
 	@echo 	flash: download application firmware into device
 	@echo 	erase: erase all flash memory device
-	@echo 	debug_init: init debug and start JLink GDB server
-	@echo 	debug_start: start GDB client and launch debug with gdb_cmd command file
 	@echo 	memwr "add=<address_hex>" "val=<value_hex_4bytes>": write 4 bytes to a flash memory address
 	@echo 	flash_softdevice: download s130 softdevice firmware into device
 

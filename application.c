@@ -210,8 +210,8 @@ void application_init( void )
 	APP_ERROR_CHECK(err_code);
 
 	/* start tick timer */
-	err_code = app_timer_start(tick_timer, APP_TIMER_TICK_COUNT, NULL);
-	APP_ERROR_CHECK(err_code);
+	//err_code = app_timer_start(tick_timer, APP_TIMER_TICK_COUNT, NULL);
+	//APP_ERROR_CHECK(err_code);
 }
 
 

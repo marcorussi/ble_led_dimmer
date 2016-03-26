@@ -100,10 +100,10 @@ static uint8_t white_pwm_value = 0;
 static uint8_t fade_count = 0;
 
 /* Variables to store step PWM values */
-static uint8_t red_pwm_step = 0;
-static uint8_t green_pwm_step = 0;
-static uint8_t blue_pwm_step = 0;
-static uint8_t white_pwm_step = 0;
+static int8_t red_pwm_step = 0;
+static int8_t green_pwm_step = 0;
+static int8_t blue_pwm_step = 0;
+static int8_t white_pwm_step = 0;
 
 
 
@@ -186,53 +186,39 @@ void led_update_light(uint8_t char_index)
 	fade_count = (uint8_t)(100 / fade_percent_value);
 
 	/* calculate PWM steps for each channel */
-	red_pwm_step = (uint8_t)(((uint16_t)char_values[preset_index] * fade_percent_value) / 100);
-	green_pwm_step = (uint8_t)(((uint16_t)char_values[preset_index+1] * fade_percent_value) / 100);
-	blue_pwm_step = (uint8_t)(((uint16_t)char_values[preset_index+2] * fade_percent_value) / 100);
-	white_pwm_step = (uint8_t)(((uint16_t)char_values[preset_index+3] * fade_percent_value) / 100);
+	red_pwm_step   = (int8_t)(((int16_t)(char_values[preset_index]   - red_pwm_value)   * fade_percent_value) / 100);
+	green_pwm_step = (int8_t)(((int16_t)(char_values[preset_index+1] - green_pwm_value) * fade_percent_value) / 100);
+	blue_pwm_step  = (int8_t)(((int16_t)(char_values[preset_index+2] - blue_pwm_value)  * fade_percent_value) / 100);
+	white_pwm_step = (int8_t)(((int16_t)(char_values[preset_index+3] - white_pwm_value) * fade_percent_value) / 100);
 }
 
 
 /* Function to manage light periodically */
 void led_manage_light(void)
 {
-	/* if a new fade count is available, new light update requested */
-	if(fade_count > 0)
+	/* update PWM until fade count expires */
+	while(fade_count > 0)
 	{
-		/* update PWM until fade count expires */
-		while(fade_count > 0)
-		{
-			/* increment R channel PWM */
-			red_pwm_value += red_pwm_step;
-			while(false == pwm1_ready_flag);
-			while(app_pwm_channel_duty_set(&PWM1, 0, red_pwm_value) == NRF_ERROR_BUSY);
-			/* increment G channel PWM */
-			green_pwm_value += green_pwm_step;
-			while(false == pwm1_ready_flag);
-			while(app_pwm_channel_duty_set(&PWM1, 1, green_pwm_value) == NRF_ERROR_BUSY);
-			/* increment B channel PWM */
-			blue_pwm_value += blue_pwm_step;
-			while(false == pwm2_ready_flag);
-			while(app_pwm_channel_duty_set(&PWM2, 0, blue_pwm_value) == NRF_ERROR_BUSY);
-			/* increment W channel PWM */
-			white_pwm_value += white_pwm_step;
-			while(false == pwm2_ready_flag);
-			while(app_pwm_channel_duty_set(&PWM2, 1, white_pwm_value) == NRF_ERROR_BUSY);
+		/* increment R channel PWM */
+		red_pwm_value += red_pwm_step;
+		while(false == pwm1_ready_flag);
+		while(app_pwm_channel_duty_set(&PWM1, 0, red_pwm_value) == NRF_ERROR_BUSY);
+		/* increment G channel PWM */
+		green_pwm_value += green_pwm_step;
+		while(false == pwm1_ready_flag);
+		while(app_pwm_channel_duty_set(&PWM1, 1, green_pwm_value) == NRF_ERROR_BUSY);
+		/* increment B channel PWM */
+		blue_pwm_value += blue_pwm_step;
+		while(false == pwm2_ready_flag);
+		while(app_pwm_channel_duty_set(&PWM2, 0, blue_pwm_value) == NRF_ERROR_BUSY);
+		/* increment W channel PWM */
+		white_pwm_value += white_pwm_step;
+		while(false == pwm2_ready_flag);
+		while(app_pwm_channel_duty_set(&PWM2, 1, white_pwm_value) == NRF_ERROR_BUSY);
 
-			/* wait for next fade increment */
-			nrf_delay_ms(PWM_FADE_PERIOD_MS);
-			fade_count--;
-		}
-
-		/* reset current PWM values */
-		red_pwm_value = 0;
-		green_pwm_value = 0;
-		blue_pwm_value = 0;
-		white_pwm_value = 0;
-	}
-	else
-	{
-		/* do nothing */
+		/* wait for next fade increment */
+		nrf_delay_ms(PWM_FADE_PERIOD_MS);
+		fade_count--;
 	}
 }
 
