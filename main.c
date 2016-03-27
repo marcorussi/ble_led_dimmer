@@ -30,6 +30,7 @@
 #include <stddef.h>
 #include "nordic_common.h"
 #include "nrf.h"
+#include "nrf_gpio.h"
 #include "nrf51_bitfields.h"
 #include "nrf_delay.h"
 #include "softdevice_handler.h"
@@ -80,6 +81,10 @@ int main(void)
 {
     /* Initialize timers */
     APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_OP_QUEUE_SIZE, false);
+
+	/* prototype test pin */
+ 	nrf_gpio_pin_dir_set(24, NRF_GPIO_PIN_DIR_OUTPUT );
+	nrf_gpio_pin_write(24, 1);
 
 	application_init();
 

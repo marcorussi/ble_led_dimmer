@@ -59,16 +59,16 @@
 #define PWM_DC_MIN_VALUE                0                                                                 		
 
 /* PWM channel for RED */   
-#define PWM_CH_R          				21
+#define PWM_CH_R          				5
 
 /* PWM channel for GREEN */   
-#define PWM_CH_G          				22
+#define PWM_CH_G          				6
 
 /* PWM channel for BLUE */   
-#define PWM_CH_B          				23
+#define PWM_CH_B          				8
 
 /* PWM channel for BLUE */   
-#define PWM_CH_W         				24
+#define PWM_CH_W         				10
 
 
 
@@ -91,6 +91,12 @@ static volatile bool pwm1_ready_flag = false;
 
 /* A flag indicating PWM2 status. */		
 static volatile bool pwm2_ready_flag = false;	
+
+/* Variables to store target PWM values */
+static uint8_t red_pwm_target = 0;
+static uint8_t green_pwm_target = 0;
+static uint8_t blue_pwm_target = 0;
+static uint8_t white_pwm_target = 0;
 
 /* Variables to store current PWM values */
 static uint8_t red_pwm_value = 0;
@@ -128,13 +134,13 @@ void led_light_init(void)
     app_pwm_config_t pwm2_cfg = APP_PWM_DEFAULT_CONFIG_2CH(5000L, PWM_CH_B, PWM_CH_W);
     
     /* Set PWM R channel polarity */
-    pwm1_cfg.pin_polarity[0] = APP_PWM_POLARITY_ACTIVE_LOW;
+    pwm1_cfg.pin_polarity[0] = APP_PWM_POLARITY_ACTIVE_HIGH;
     /* Set PWM G channel polarity */
-    pwm1_cfg.pin_polarity[1] = APP_PWM_POLARITY_ACTIVE_LOW;
+    pwm1_cfg.pin_polarity[1] = APP_PWM_POLARITY_ACTIVE_HIGH;
     /* Set PWM B channel polarity */
-    pwm2_cfg.pin_polarity[0] = APP_PWM_POLARITY_ACTIVE_LOW;
+    pwm2_cfg.pin_polarity[0] = APP_PWM_POLARITY_ACTIVE_HIGH;
 	/* Set PWM W channel polarity */
-    pwm2_cfg.pin_polarity[1] = APP_PWM_POLARITY_ACTIVE_LOW;
+    pwm2_cfg.pin_polarity[1] = APP_PWM_POLARITY_ACTIVE_HIGH;
     
     /* Initialize PWM1 */
     err_code = app_pwm_init(&PWM1, &pwm1_cfg, pwm_ready_callback);
@@ -185,34 +191,71 @@ void led_update_light(uint8_t char_index)
 	/* calculate update counts for fade */
 	fade_count = (uint8_t)(100 / fade_percent_value);
 
+	red_pwm_target = char_values[preset_index];
+	green_pwm_target = char_values[preset_index+1];
+	blue_pwm_target = char_values[preset_index+2];
+	white_pwm_target = char_values[preset_index+3];
+
 	/* calculate PWM steps for each channel */
-	red_pwm_step   = (int8_t)(((int16_t)(char_values[preset_index]   - red_pwm_value)   * fade_percent_value) / 100);
-	green_pwm_step = (int8_t)(((int16_t)(char_values[preset_index+1] - green_pwm_value) * fade_percent_value) / 100);
-	blue_pwm_step  = (int8_t)(((int16_t)(char_values[preset_index+2] - blue_pwm_value)  * fade_percent_value) / 100);
-	white_pwm_step = (int8_t)(((int16_t)(char_values[preset_index+3] - white_pwm_value) * fade_percent_value) / 100);
+	red_pwm_step   = (int8_t)(((int16_t)(red_pwm_target   - red_pwm_value)   * fade_percent_value) / 100);
+	green_pwm_step = (int8_t)(((int16_t)(green_pwm_target - green_pwm_value) * fade_percent_value) / 100);
+	blue_pwm_step  = (int8_t)(((int16_t)(blue_pwm_target  - blue_pwm_value)  * fade_percent_value) / 100);
+	white_pwm_step = (int8_t)(((int16_t)(white_pwm_target - white_pwm_value) * fade_percent_value) / 100);
 }
 
 
 /* Function to manage light periodically */
 void led_manage_light(void)
 {
-	/* update PWM until fade count expires */
+	/* update PWM until fade count expires. Last run is set directly to target PWM value.
+	   Indeed the target value can not be a multiple of calculated step. */
 	while(fade_count > 0)
 	{
 		/* increment R channel PWM */
-		red_pwm_value += red_pwm_step;
+		if(fade_count == 1)
+		{
+			red_pwm_value = red_pwm_target;
+		}
+		else
+		{
+			red_pwm_value = (uint8_t)(red_pwm_value + red_pwm_step);
+		}
 		while(false == pwm1_ready_flag);
 		while(app_pwm_channel_duty_set(&PWM1, 0, red_pwm_value) == NRF_ERROR_BUSY);
+
 		/* increment G channel PWM */
-		green_pwm_value += green_pwm_step;
+		if(fade_count == 1)
+		{
+			green_pwm_value = green_pwm_target;
+		}
+		else
+		{
+			green_pwm_value = (uint8_t)(green_pwm_value + green_pwm_step);
+		}
 		while(false == pwm1_ready_flag);
 		while(app_pwm_channel_duty_set(&PWM1, 1, green_pwm_value) == NRF_ERROR_BUSY);
+
 		/* increment B channel PWM */
-		blue_pwm_value += blue_pwm_step;
+		if(fade_count == 1)
+		{
+			blue_pwm_value = blue_pwm_target;
+		}
+		else
+		{
+			blue_pwm_value = (uint8_t)(blue_pwm_value + blue_pwm_step);
+		}
 		while(false == pwm2_ready_flag);
 		while(app_pwm_channel_duty_set(&PWM2, 0, blue_pwm_value) == NRF_ERROR_BUSY);
+
 		/* increment W channel PWM */
-		white_pwm_value += white_pwm_step;
+		if(fade_count == 1)
+		{
+			white_pwm_value = white_pwm_target;
+		}
+		else
+		{
+			white_pwm_value = (uint8_t)(white_pwm_value + white_pwm_step);
+		}
 		while(false == pwm2_ready_flag);
 		while(app_pwm_channel_duty_set(&PWM2, 1, white_pwm_value) == NRF_ERROR_BUSY);
 

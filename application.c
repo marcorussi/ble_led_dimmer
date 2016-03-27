@@ -94,36 +94,36 @@ const uint8_t default_values[BLE_DIMMER_SERVICE_CHARS_LENGTH] =
 	DEF_BLUE_PWM_PERCENT,		/* Light - B */
 	DEF_WHITE_PWM_PERCENT,		/* Light - W */
 	DEF_FADE_PWM_PERCENT,		/* Light - Fade */
-	30,		/* Preset 1 - R */						
-	30,		/* Preset 1 - G */
-	30,		/* Preset 1 - B */
-	30,		/* Preset 1 - W */
+	20,		/* Preset 1 - R */						
+	0,		/* Preset 1 - G */
+	0,		/* Preset 1 - B */
+	0,		/* Preset 1 - W */
 	100,	/* Preset 1 - Fade */
-	95,		/* Preset 2 - R */						
-	95,		/* Preset 2 - G */
-	95,		/* Preset 2 - B */
-	95,		/* Preset 2 - W */
-	20,		/* Preset 2 - Fade */
-	10,		/* Preset 3 - R */						
-	10,		/* Preset 3 - G */
-	10,		/* Preset 3 - B */
-	10,		/* Preset 3 - W */
-	100,	/* Preset 3 - Fade */
+	0,		/* Preset 2 - R */						
+	60,		/* Preset 2 - G */
+	0,		/* Preset 2 - B */
+	0,		/* Preset 2 - W */
+	30,		/* Preset 2 - Fade */
+	0,		/* Preset 3 - R */						
+	0,		/* Preset 3 - G */
+	95,		/* Preset 3 - B */
+	0,		/* Preset 3 - W */
+	10,		/* Preset 3 - Fade */
 	50,		/* Preset 4 - R */						
 	50,		/* Preset 4 - G */
-	50,		/* Preset 4 - B */
-	50,		/* Preset 4 - W */
+	0,		/* Preset 4 - B */
+	0,		/* Preset 4 - W */
 	30,		/* Preset 4 - Fade */
-	30,		/* Preset 5 - R */						
-	70,		/* Preset 5 - G */
-	10,		/* Preset 5 - B */
-	0,		/* Preset 5 - W */
-	100,	/* Preset 5 - Fade */
+	0,		/* Preset 5 - R */						
+	0,		/* Preset 5 - G */
+	0,		/* Preset 5 - B */
+	100,	/* Preset 5 - W */
+	90,		/* Preset 5 - Fade */
 	0,		/* Preset 6 - R */						
 	0,		/* Preset 6 - G */
 	0,		/* Preset 6 - B */
 	0,		/* Preset 6 - W */
-	10,		/* Preset 6 - Fade */
+	70,		/* Preset 6 - Fade */
 };
 
 
@@ -210,8 +210,8 @@ void application_init( void )
 	APP_ERROR_CHECK(err_code);
 
 	/* start tick timer */
-	//err_code = app_timer_start(tick_timer, APP_TIMER_TICK_COUNT, NULL);
-	//APP_ERROR_CHECK(err_code);
+	err_code = app_timer_start(tick_timer, APP_TIMER_TICK_COUNT, NULL);
+	APP_ERROR_CHECK(err_code);
 }
 
 

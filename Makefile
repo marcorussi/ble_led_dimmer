@@ -23,7 +23,7 @@
 #TODO: consider to remove UART
 
 #ATTENTON: comment the following define for optimized release firmware; not suitable for debug
-DEBUG := 1
+#DEBUG := 1
 
 #ATTENTON: modify following names and paths as required
 PROJECT_NAME := ble_led_dimmer
