@@ -26,7 +26,7 @@ TOOLCHAIN_PREFIX=arm-none-eabi
 # assume the tools are on the system path
 TOOLCHAIN_PATH=
 JLINK_PATH="/opt/JLink_Linux_V502d_x86_64"
-JLINK_OPTIONS="-device nRF51422_xxAC -if swd -speed 1000"
+JLINK_OPTIONS="-device nRF51822_xxAA -if swd -speed 1000"
 
 HEX=$2
 

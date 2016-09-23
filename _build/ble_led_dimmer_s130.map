@@ -365,7 +365,7 @@ Memory Configuration
 
 Name             Origin             Length             Attributes
 FLASH            0x0001b000         0x00024000         xr
-RAM              0x20002800         0x00005800         xrw
+RAM              0x20002800         0x00001800         xrw
 *default*        0x00000000         0xffffffff
 
 Linker script and memory map
@@ -1181,9 +1181,9 @@ END GROUP
 .stack_dummy    0x20002e80      0x800
  *(.stack*)
  .stack         0x20002e80      0x800 _build/gcc_startup_nrf51.o
-                0x20008000                __StackTop = (ORIGIN (RAM) + 0x5800)
-                0x20007800                __StackLimit = (__StackTop - SIZEOF (.stack_dummy))
-                0x20008000                PROVIDE (__stack, __StackTop)
+                0x20004000                __StackTop = (ORIGIN (RAM) + 0x1800)
+                0x20003800                __StackLimit = (__StackTop - SIZEOF (.stack_dummy))
+                0x20004000                PROVIDE (__stack, __StackTop)
                 0x00000001                ASSERT ((__StackLimit >= __HeapLimit), region RAM overflowed with stack)
 OUTPUT(_build/ble_led_dimmer_s130.out elf32-littlearm)
 
