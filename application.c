@@ -22,13 +22,6 @@
 */
 
 
-/* 
-	ATTENTION:
-	LIGHT characteristic values are stored and have default values but are not used.
-   	They are only read upon reception of new values. Then they are stored again just for logging. 
-*/
-
-
 
 
 /* ------------- Inclusions --------------- */
@@ -127,8 +120,6 @@ void app_on_special_op( uint8_t special_op_byte )
 /* callback on connection event */
 void application_on_conn( void )
 {
-	//uint32_t err_code;
-
 	/* do nothing at the moment */
 }
 
@@ -136,8 +127,6 @@ void application_on_conn( void )
 /* callback on disconnection event */
 void application_on_disconn( void )
 {
-	//uint32_t err_code;
-
 	/* start avertising */
 	ble_man_adv_start();
 }
@@ -146,8 +135,6 @@ void application_on_disconn( void )
 /* init application */
 void application_init( void )
 {
-	//uint32_t err_code;
-
 	/* init peripheral connection */
 	ble_man_init();
 
@@ -178,6 +165,9 @@ void application_run( void )
 	{	
 		/* clear flag */
 		adv_timeout = false;
+#ifdef LED_DEBUG
+		nrf_gpio_pin_write(24, 0);
+#endif
 		/* start scanning */
 		ble_man_scan_start();
 	}

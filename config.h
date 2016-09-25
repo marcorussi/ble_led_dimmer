@@ -29,7 +29,7 @@
 
 
 /* Advertising timeout in s after than scanning is kicked */
-#define ADV_TIMEOUT_TO_START_SCAN_S					5		/* 5s */
+#define ADV_TIMEOUT_TO_START_SCAN_S					10		/* 10s */
 
 /* Name of device. Will be included in the advertising data */
 #define DEVICE_NAME                      			"light_dimmer"  

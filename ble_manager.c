@@ -393,9 +393,6 @@ static void get_advertising_fields(uint8_t *p_data, uint8_t data_length)
 			/* if data flag is different than last one */
 			if(data_flag != last_data_flag)
 			{
-#ifdef LED_DEBUG
-				nrf_gpio_pin_toggle(24);
-#endif
 				/* store last data byte */
 				last_data_flag = data_flag;
 
@@ -454,11 +451,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
 		{
             if (p_gap_evt->params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISING)
             {
-				/* ATTENTION: consider to start scanning here instead of from application */
-				/* start advertising again */
-				//err_code = sd_ble_gap_adv_start(&adv_params);
-				//APP_ERROR_CHECK(err_code);
-				//led_update_light(90,10,100,10);
+				/* inform application */
 				app_on_adv_timeout();
 			}
 			else if (p_gap_evt->params.timeout.src == BLE_GAP_TIMEOUT_SRC_SCAN)
