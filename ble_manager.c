@@ -43,6 +43,7 @@
 #include "app_trace.h"
 #include "app_util_platform.h"
 
+#include "config.h"
 #include "ble_manager.h"
 #include "dimmer_service.h"
 #include "led_strip.h"
@@ -64,31 +65,6 @@
 
 /* Number of peripheral links used by the application. When changing this number remember to adjust the RAM settings */
 #define PERIPHERAL_LINK_COUNT            	1                                          
-
-/* Name of device. Will be included in the advertising data */
-#define DEVICE_NAME                      	"Dimmer"  
-
-/* Company ID. Will be included in the advertising data */
-#define TEMP_COMPANY_ID 					0x0FFE
-
-/* Unique device ID */
-// TODO: this value should be stored in UICR memory
-#define UNIQUE_DEVICE_ID					0x12568978      
-
-/* Frmware version */
-// TODO: find a proper place
-#define FIRMWARE_VERSION					1    
-
-/* Advertisement packet lengths in bytes and positions in data array: Unique Device ID */   
-#define UNIQUE_DEVICE_ID_POS  				0
-#define UNIQUE_DEVICE_ID_LENGTH 			4  
-
-/* Advertisement packet lengths in bytes and positions in data array: Firmware version */   
-#define FW_VERSION_POS  					(UNIQUE_DEVICE_ID_POS + UNIQUE_DEVICE_ID_LENGTH)
-#define FW_VERSION_LENGTH 					1 
-
-/* Advertisement packet total length */ 
-#define ADV_DATA_LENGTH						FW_VERSION_POS + FW_VERSION_LENGTH
 
 /* The advertising interval (in units of 0.625 ms. This value corresponds to 25 ms) */
 #define APP_ADV_INTERVAL                 	100 
@@ -122,15 +98,14 @@
 #define MAX_CONN_PARAMS_UPDATE_COUNT     	3                                                                                                       
 
 /* TX Power Level value. This will be set both in the TX Power service, in the advertising data, and also used to set the radio transmit power */
-#define TX_POWER_LEVEL                     	(-8)                                                                          
+#define TX_POWER_LEVEL                     	TX_POWER_MEASURED_RSSI                                                                    
 
-/* Adv fixed fields values */
+/* Adv fixed fields values to scan and match */
 #define ADV_FLAGS_TYPE						BLE_GAP_AD_TYPE_FLAGS
 #define BR_EDR_NOT_SUPPORTED				BLE_GAP_ADV_FLAG_BR_EDR_NOT_SUPPORTED
 #define MANUF_DATA_TYPE						BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA
-#define MANUFACTURER_ID						0x0059
-#define MANUF_DATA_LENGTH					19
-#define MANUF_PRODUCT_ID					0x0202	
+#define MANUFACTURER_ID						TEMP_COMPANY_ID
+#define MANUF_DATA_LENGTH					11
 #define MANUF_SERVICE_ID					0x0110	
 
 /* Scanning parameters */    
@@ -161,14 +136,8 @@ typedef enum
 	MANUF_ID_BYTE_0_POS,				/* manufacturer ID lower byte */
 	MANUF_ID_BYTE_1_POS,				/* manufacturer ID higher byte */
 	MANUF_DATA_LENGTH_POS,				/* data length */
-	PRODUCT_ID_BYTE_0_POS,				/* product type ID lower byte */
-	PRODUCT_ID_BYTE_1_POS,				/* product type ID higher byte */
-	SERVICE_UUID_BYTE_0_POS,			/* service ID lower byte */
-	SERVICE_UUID_BYTE_1_POS,			/* service ID higher byte */
-	DEVICE_ID_BYTE_0_POS,				/* device ID byte 0 */
-	DEVICE_ID_BYTE_1_POS,				/* device ID byte 1 */
-	DEVICE_ID_BYTE_2_POS,				/* device ID byte 2 */
-	DEVICE_ID_BYTE_3_POS,				/* device ID byte 3 */
+	SERVICE_ID_BYTE_0_POS,				/* service ID lower byte */
+	SERVICE_ID_BYTE_1_POS,				/* service ID higher byte */
 	DATA_BYTE_0_POS,					/* data byte 0 */
 	DATA_BYTE_1_POS,					/* data byte 1 */
 	DATA_BYTE_2_POS,					/* data byte 2 */
@@ -177,19 +146,17 @@ typedef enum
 	DATA_BYTE_5_POS,					/* data byte 5 */
 	DATA_BYTE_6_POS,					/* data byte 6 */
 	DATA_BYTE_7_POS,					/* data byte 7 */
-	RESERVED_0_POS,						/* reserved 0 */
-	RESERVED_1_POS,						/* reserved 1 */
 	CALIB_RSSI_POS,						/* calibrated RSSI */
-	ADV_PACKET_LENGTH					/* Adv packet length. This is not included. It is for fw purpose only */
-} adv_packet_form_e;
+	ADV_DATA_PACKET_LENGTH				/* Adv packet length. This is not included. It is for fw purpose only */
+} adv_data_packet_e;
 
 
 
 
 /* ----------------------- Local variables ---------------------- */
 
-/* Store the last received data from adv packet */
-static uint8_t last_data_byte = 0xFF;
+/* Store the last received data flag from adv packet */
+static uint8_t last_data_flag = 0xFF;
 
 /* Structure to store advertising parameters */
 static ble_gap_adv_params_t adv_params;
@@ -219,7 +186,7 @@ static const ble_gap_scan_params_t m_scan_params =
 
 
 /* Preamble of the Adv packet. This string represent a fixed part of the adv packet */
-static const uint8_t preamble_adv[DEVICE_ID_BYTE_0_POS] = 
+static const uint8_t preamble_adv[DATA_BYTE_0_POS] = 
 {
 	0x02,								/* first length */
 	ADV_FLAGS_TYPE,						/* adv flags type */
@@ -229,10 +196,8 @@ static const uint8_t preamble_adv[DEVICE_ID_BYTE_0_POS] =
 	(uint8_t)MANUFACTURER_ID,			/* manufacturer ID lower byte */
 	(uint8_t)(MANUFACTURER_ID >> 8),	/* manufacturer ID higher byte */
 	MANUF_DATA_LENGTH,					/* manufacturer specific data length */
-	(uint8_t)MANUF_PRODUCT_ID,			/* product type ID lower byte */
-	(uint8_t)(MANUF_PRODUCT_ID >> 8),	/* product type ID higher byte */
-	(uint8_t)MANUF_SERVICE_ID,			/* service UUID lower byte */
-	(uint8_t)(MANUF_SERVICE_ID >> 8)	/* service UUID higher byte */
+	(uint8_t)MANUF_SERVICE_ID,			/* service ID lower byte */
+	(uint8_t)(MANUF_SERVICE_ID >> 8)	/* service ID higher byte */
 };
 
 
@@ -262,8 +227,7 @@ static void dimmer_data_handler(ble_dimmer_st * p_dimmer)
 {
 	UNUSED_PARAMETER(p_dimmer);
 
-	/* update light value according to LIGHT characteristic */
-	led_update_light(0);
+	/* do nothing */
 }
 
 
@@ -284,7 +248,7 @@ static void gap_params_init(void)
     APP_ERROR_CHECK(err_code);
 
     /* TODO: Use an appearance value matching the application's use case. */
-    err_code = sd_ble_gap_appearance_set(BLE_APPEARANCE_GENERIC_THERMOMETER);
+    err_code = sd_ble_gap_appearance_set(BLE_APPEARANCE_GENERIC_REMOTE_CONTROL);
     APP_ERROR_CHECK(err_code); 
 
     memset(&gap_conn_params, 0, sizeof(gap_conn_params));
@@ -370,26 +334,29 @@ static void conn_params_init(void)
 static void get_advertising_fields(uint8_t *p_data, uint8_t data_length)
 {
 	/* consider only packets with a specific expected length */
-	if(data_length == ADV_PACKET_LENGTH)
+	if(data_length == ADV_DATA_PACKET_LENGTH)
 	{
 		/* if adv preamble is as expected */
-		if(0 == memcmp(p_data, &preamble_adv, DEVICE_ID_BYTE_0_POS))
+		if(0 == memcmp(p_data, &preamble_adv, DATA_BYTE_0_POS))
 		{
 			/* preable is valid. Device found */
-			/* ATTENTION: device ID is not considered at the moment */
 			/* get interesting data */
-			uint8_t data_byte = p_data[DATA_BYTE_0_POS];
+			uint8_t data_flag = p_data[DATA_BYTE_2_POS];
 			/* ATTENTION: everything else is not considered at the moment */
 	
-			/* if data byte is different than last one and within the vald range */
-			if((data_byte <= BLE_PRESET_NUM_OF_VALUES)
-			&& (data_byte != last_data_byte))
+			/* if data flag is different than last one */
+			if(data_flag != last_data_flag)
 			{
+				nrf_gpio_pin_toggle(24);
+	
 				/* store last data byte */
-				last_data_byte = data_byte;
+				last_data_flag = data_flag;
 
 				/* update light according to required preset index */
-				led_update_light(last_data_byte);
+				led_update_light(	p_data[DATA_BYTE_3_POS],
+									p_data[DATA_BYTE_4_POS],
+									p_data[DATA_BYTE_5_POS],
+									p_data[DATA_BYTE_6_POS]);
 			}
 			else
 			{
@@ -440,6 +407,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
 		{
             if (p_gap_evt->params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISING)
             {
+				/* ATTENTION: consider to start scanning here instead of from application */
 				/* start advertising again */
 				err_code = sd_ble_gap_adv_start(&adv_params);
 				APP_ERROR_CHECK(err_code);
@@ -560,9 +528,6 @@ static void ble_periph_adv_set_data(void)
 {
 	uint32_t      				err_code;
     int8_t        				tx_power_level = TX_POWER_LEVEL;
-	ble_advdata_manuf_data_t	manuf_data;
-	uint8_t 					data_array[ADV_DATA_LENGTH];
-	uint32_t 					unique_device_id = UNIQUE_DEVICE_ID;
 	static ble_advdata_t 		ble_adv_data;
 	static ble_advdata_t 		ble_scan_resp;
 
@@ -573,21 +538,8 @@ static void ble_periph_adv_set_data(void)
     ble_adv_data.include_appearance      = true;
     ble_adv_data.flags                   = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
     ble_adv_data.p_tx_power_level        = &tx_power_level;
-
-	/* Manufacturer specific data */
-
-	/* set unique device ID */
-	memcpy(&data_array[UNIQUE_DEVICE_ID_POS], (const uint8_t *)&unique_device_id, UNIQUE_DEVICE_ID_LENGTH);
-	/* set fw version */
-	data_array[FW_VERSION_POS] = FIRMWARE_VERSION;
-
-	/* set manufacturer specific data */
-	manuf_data.data.size = ADV_DATA_LENGTH;
-	manuf_data.data.p_data = data_array;
-	/* set company identifier */
-	manuf_data.company_identifier = TEMP_COMPANY_ID;
-	/* set manufacturer specific data structure */
-	ble_adv_data.p_manuf_specific_data = &manuf_data;
+	/* NO manufacturer specific data structure */
+	ble_adv_data.p_manuf_specific_data = NULL;
 
 	/* clear and set scan response data */
 	memset(&ble_scan_resp, 0, sizeof(ble_scan_resp));

@@ -41,24 +41,19 @@
 #include "nrf.h"
 #include "nrf_gpio.h"
 #include "ble_srv_common.h"
-#include "memory.h"
 #include "bootloader.h"
 
 #include "dimmer_service.h"
+#include "memory.h"
+#include "application.h"
 
 
 
 
 /* ------------- Local definitions --------------- */
 
-/* Password for starting DFU Upgrade on char write */
-#define DFU_UPGRADE_CHAR_PASSWORD				0xA9
-
-/* The UUID of the LIGHT Characteristic */
-#define BLE_UUID_DIMMER_LIGHT_CHAR				0x0005 
-
-/* The UUID of the PRESET Characteristic */
-#define BLE_UUID_DIMMER_PRESET_CHAR				0x000A   
+/* The UUID of the CONFIG Characteristic */
+#define BLE_UUID_DIMMER_CONFIG_CHAR				0x0009   
 
 /* The UUID of the DFU UPGRADE Characteristic */
 #define BLE_UUID_DIMMER_DFU_CHAR				0x000F   
@@ -66,27 +61,12 @@
 /* User vendor specific UUID */
 #define DIMMER_BASE_UUID                  		{{0x8A, 0xAF, 0xA6, 0xC2, 0x3A, 0x32, 0x8F, 0x84, 0x75, 0x4F, 0xF3, 0x02, 0x01, 0x50, 0x65, 0x20}} 
 
-/* Minimum and maximum range values for LIGHT timeout */
-#define MIN_PWM_VALUE_PERCENT					0
-#define MAX_PWM_VALUE_PERCENT					100
-
-/* Minimum and maximum range values for PRESET timeout */
-#define MIN_FADE_VALUE_PERCENT_S				0
-#define MAX_FADE_VALUE_PERCENT_S				200
-
-
-
-
-/* ------------- Local macros --------------- */
-
-/* Macro to set spacial value on GPREGRET register to start bootloader after reset */
-#define SET_REG_VALUE_TO_START_BOOTLOADER()  		(NRF_POWER->GPREGRET = BOOTLOADER_DFU_START)
-
 
 
 
 /* ------------- Exported variables --------------- */
 
+/* Store characteristic values */
 uint8_t char_values[BLE_DIMMER_SERVICE_CHARS_LENGTH];
 
 
@@ -130,32 +110,20 @@ static void on_write(ble_dimmer_st * p_dimmer, ble_evt_t * p_ble_evt)
 	if((p_evt_write->data != NULL)
     && (p_evt_write->len > 0))
 	{
-		if(p_evt_write->handle == p_dimmer->light_charac_handles.value_handle)
-		{
-			/* TODO: consider to send memory result to upper layers */
-			/* update field in the persistent memory, just for log */
-			memory_update_field(BLE_DIMMER_LIGHT_CHAR_POS, p_evt_write->data, p_evt_write->len);
-
-			/* call previously registered callback function for CMD */
-			p_dimmer->data_handler(p_dimmer);
-		}
-		else if(p_evt_write->handle == p_dimmer->preset_charac_handles.value_handle)
+		if(p_evt_write->handle == p_dimmer->cfg_charac_handles.value_handle)
 		{
 			/* TODO: consider to send memory result to upper layers */
 			/* update field in the persistent memory */
-			memory_update_field(BLE_DIMMER_PRESET_CHAR_POS, p_evt_write->data, p_evt_write->len);
+			memory_update_field(BLE_DIMMER_CONFIG_CHAR_POS, p_evt_write->data, p_evt_write->len);
+			/* ATTENTION: the new data is not sent to application or any other module */
 		}
-		else if(p_evt_write->handle == p_dimmer->dfu_charac_handles.value_handle)
+		else if(p_evt_write->handle == p_dimmer->special_op_charac_handles.value_handle)
 		{
-			/* if received data is the password for DFU Upgrade */
-			if((*p_evt_write->data == DFU_UPGRADE_CHAR_PASSWORD)
-			&& (p_evt_write->len == 1))
+			/* if received data is 1 byte long */
+			if (p_evt_write->len == 1)
 			{
-				/* set special register value to start bootloader */
-				SET_REG_VALUE_TO_START_BOOTLOADER();
-
-				/* perform a system reset */
-				NVIC_SystemReset();
+				/* send the received byte to application layer */
+				app_on_special_op(((uint8_t)(*p_evt_write->data)));
 			}
 			else
 			{
@@ -304,37 +272,27 @@ uint32_t ble_dimmer_init(ble_dimmer_st * p_dimmer, const ble_dimmer_init_st * p_
         return err_code;
     }
 
-    /* Add the LIGHT Characteristic - Read/Write */
-    err_code = char_add(p_dimmer, 
-						&p_dimmer->light_charac_handles, 
-						true, 
-						BLE_DIMMER_LIGHT_CHAR_LENGTH, 
-						BLE_UUID_DIMMER_LIGHT_CHAR, 
-						(uint8_t *)&char_values[BLE_DIMMER_LIGHT_CHAR_POS]);
-    if (err_code != NRF_SUCCESS)
-    {
-        return err_code;
-    }
-
-	/* Add the PRESET Characteristic - Read/Write */
-    err_code = char_add(p_dimmer, 
-						&p_dimmer->preset_charac_handles, 
-						true, 
-						BLE_DIMMER_PRESET_CHAR_LENGTH, 
-						BLE_UUID_DIMMER_PRESET_CHAR, 
-						(uint8_t *)&char_values[BLE_DIMMER_PRESET_CHAR_POS]);
-    if (err_code != NRF_SUCCESS)
-    {
-        return err_code;
-    }
-
 	/* Add the DFU UPGRADE Characteristic - Read/Write */
     err_code = char_add(p_dimmer, 
-						&p_dimmer->dfu_charac_handles, 
+						&p_dimmer->cfg_charac_handles, 
 						true, 
-						BLE_DIMMER_DFU_CHAR_LENGTH, 
+						BLE_DIMMER_CONFIG_CHAR_LENGTH, 
+						BLE_UUID_DIMMER_CONFIG_CHAR, 
+						(uint8_t *)&char_values[BLE_DIMMER_CONFIG_CHAR_POS]);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+
+	/* Add the SPECIAL_OP Characteristic - Write */
+	/* ATTENTION: consider to use a stack location for this characteristic.
+       The same user buffer of preset chars is used at the moment. */
+    err_code = char_add(p_dimmer, 
+						&p_dimmer->special_op_charac_handles, 
+						false, 
+						BLE_DIMMER_SPECIAL_OP_CHAR_LENGTH, 
 						BLE_UUID_DIMMER_DFU_CHAR, 
-						(uint8_t *)&char_values[BLE_DIMMER_DFU_CHAR_POS]);
+						(uint8_t *)&char_values[BLE_DIMMER_SPECIAL_OP_CHAR_POS]);
     if (err_code != NRF_SUCCESS)
     {
         return err_code;

@@ -22,28 +22,29 @@
 */
 
 
-/* ------------- Inclusions --------------- */
-
-#include <stdint.h>
-#include <stdbool.h>
 
 
+/* Name of device. Will be included in the advertising data */
+#define DEVICE_NAME                      			"light_dimmer"  
 
+/* ATTENTION: temporary company ID */
+#define TEMP_COMPANY_ID 							0x0FFE 
 
-/* ---------------- Exported functions prototypes --------------------- */   
+/* TX power RSSI */
+#define TX_POWER_MEASURED_RSSI						0xc2
 
-extern void app_on_special_op		(uint8_t);
-extern void application_on_conn		(void);
-extern void application_on_disconn	(void);
-extern void application_init		(void);
-extern void application_run			(void);
+/* HW revision */
+#define HW_REVISION									"Proto"
+
+/* FW revision */
+#define FW_REVISION									"A0.6"
+
+/* Manufacturer name */
+#define MANUFACTURER_NAME							"Pingeco ltd"
 
 
 
 
 /* End of file */
-
-
-
 
 

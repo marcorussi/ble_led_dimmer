@@ -36,7 +36,7 @@
 
 extern void led_light_init(void);
 extern void led_turn_off(void);
-extern void led_update_light(uint8_t);
+extern void led_update_light(uint8_t, uint8_t, uint8_t, uint8_t);
 extern void led_manage_light(void);
 
 

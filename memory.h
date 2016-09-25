@@ -32,16 +32,8 @@
 
 /* ------------- Exported defines --------------- */
 
-/* Position in words of the CMD field */
-#define MEM_CMD_FIELD_WORD_POS						0
-
-/* Position in words of the POWER S field */
-#define MEM_POWER_S_FIELD_WORD_POS					1
-
-/* Position in words of the timers fields */
-#define MEM_TIMERS_FIELDS_WORD_POS					2
-
-
+/* Fade byte position in the shared memory structure */
+#define MEM_FADE_BYTE_POS			BLE_DIMMER_CONFIG_CHAR_POS
 
 
 /* ------------- Exported functions --------------- */

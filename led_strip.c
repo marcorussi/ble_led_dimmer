@@ -41,6 +41,8 @@
 #include "app_timer.h"
 #include "app_util_platform.h"
 #include "app_pwm.h"
+
+#include "memory.h"
 #include "dimmer_service.h"
 #include "led_strip.h"
 
@@ -104,6 +106,7 @@ static uint8_t green_pwm_value = 0;
 static uint8_t blue_pwm_value = 0;
 static uint8_t white_pwm_value = 0;
 static uint8_t fade_count = 0;
+static uint8_t fade_percent_value;
 
 /* Variables to store step PWM values */
 static int8_t red_pwm_step = 0;
@@ -156,6 +159,14 @@ void led_light_init(void)
 	/* ready to do first PWM1/2 update */
     pwm1_ready_flag = true;
     pwm2_ready_flag = true;
+
+	/* ATTENTION: fade value is read from memory once during init */
+
+	/* get fade value at init only */
+	fade_percent_value = char_values[MEM_FADE_BYTE_POS];
+
+	/* calculate update counts for fade */
+	fade_count = (uint8_t)(100 / fade_percent_value);
 }
 
 
@@ -177,36 +188,53 @@ void led_turn_off(void)
 
 
 /* Function to update LED ligth */
-void led_update_light(uint8_t char_index)
+void led_update_light(	uint8_t red_value, 
+					  	uint8_t green_value, 
+						uint8_t blue_value, 
+						uint8_t white_value)
 {
-	uint8_t preset_index;
-	uint8_t fade_percent_value;
+	/* check values */
+	if((red_value <= 100)
+	&& (green_value <= 100)
+	&& (blue_value <= 100)
+	&& (white_value <= 100))
+	{
+		red_pwm_target = red_value;
+		green_pwm_target = green_value;
+		blue_pwm_target = blue_value;
+		white_pwm_target = white_value;
 
-	/* calculate preset index */
-	preset_index = (char_index * BLE_DIMMER_PRESET_CHAR_POS);
-
-	/* get fade value */
-	fade_percent_value = char_values[preset_index+4];
-
-	/* calculate update counts for fade */
-	fade_count = (uint8_t)(100 / fade_percent_value);
-
-	red_pwm_target = char_values[preset_index];
-	green_pwm_target = char_values[preset_index+1];
-	blue_pwm_target = char_values[preset_index+2];
-	white_pwm_target = char_values[preset_index+3];
-
-	/* calculate PWM steps for each channel */
-	red_pwm_step   = (int8_t)(((int16_t)(red_pwm_target   - red_pwm_value)   * fade_percent_value) / 100);
-	green_pwm_step = (int8_t)(((int16_t)(green_pwm_target - green_pwm_value) * fade_percent_value) / 100);
-	blue_pwm_step  = (int8_t)(((int16_t)(blue_pwm_target  - blue_pwm_value)  * fade_percent_value) / 100);
-	white_pwm_step = (int8_t)(((int16_t)(white_pwm_target - white_pwm_value) * fade_percent_value) / 100);
+		/* calculate PWM steps for each channel */
+		red_pwm_step   = (int8_t)(((int16_t)(red_pwm_target   - red_pwm_value)   * fade_percent_value) / 100);
+		green_pwm_step = (int8_t)(((int16_t)(green_pwm_target - green_pwm_value) * fade_percent_value) / 100);
+		blue_pwm_step  = (int8_t)(((int16_t)(blue_pwm_target  - blue_pwm_value)  * fade_percent_value) / 100);
+		white_pwm_step = (int8_t)(((int16_t)(white_pwm_target - white_pwm_value) * fade_percent_value) / 100);
+	}
+	else
+	{
+		/* do nothing */
+	}
 }
 
 
 /* Function to manage light periodically */
 void led_manage_light(void)
 {
+#if 1
+	while(false == pwm1_ready_flag);
+	while(app_pwm_channel_duty_set(&PWM1, 0, red_pwm_target) == NRF_ERROR_BUSY);
+
+	while(false == pwm1_ready_flag);
+	while(app_pwm_channel_duty_set(&PWM1, 1, green_pwm_target) == NRF_ERROR_BUSY);
+
+	while(false == pwm2_ready_flag);
+	while(app_pwm_channel_duty_set(&PWM2, 0, blue_pwm_target) == NRF_ERROR_BUSY);
+
+	while(false == pwm2_ready_flag);
+	while(app_pwm_channel_duty_set(&PWM2, 1, white_pwm_target) == NRF_ERROR_BUSY);
+#endif
+
+#if 0
 	/* update PWM until fade count expires. Last run is set directly to target PWM value.
 	   Indeed the target value can not be a multiple of calculated step. */
 	while(fade_count > 0)
@@ -263,6 +291,7 @@ void led_manage_light(void)
 		nrf_delay_ms(PWM_FADE_PERIOD_MS);
 		fade_count--;
 	}
+#endif
 }
 
 
