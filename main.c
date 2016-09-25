@@ -36,6 +36,7 @@
 #include "softdevice_handler.h"
 #include "app_timer.h"
 
+#include "config.h"
 #include "application.h"
 
 
@@ -81,11 +82,11 @@ int main(void)
 {
     /* Initialize timers */
     APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_OP_QUEUE_SIZE, false);
-
+#ifdef LED_DEBUG
 	/* prototype test pin */
  	nrf_gpio_pin_dir_set(24, NRF_GPIO_PIN_DIR_OUTPUT );
 	nrf_gpio_pin_write(24, 0);
-
+#endif
 	application_init();
 
     while(true)

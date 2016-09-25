@@ -95,6 +95,7 @@ $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/pstorage/pstorage.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/ble/common/ble_advdata.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/ble/common/ble_conn_params.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/ble/common/ble_srv_common.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/ble/ble_services/ble_dis/ble_dis.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/ble/ble_services/ble_nus/ble_nus.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/toolchain/system_nrf51.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/softdevice/common/softdevice_handler/softdevice_handler.c) \
@@ -109,6 +110,7 @@ INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/toolchain/gcc)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/uart)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/ppi)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/ble/common)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/ble/ble_services/ble_dis)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/softdevice/s130/headers)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/softdevice/s130/headers/nrf51)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/common)

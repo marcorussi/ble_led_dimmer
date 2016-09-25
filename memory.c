@@ -30,6 +30,8 @@
 #include "nrf_gpio.h"
 #include "softdevice_handler.h"
 #include "pstorage.h"
+
+#include "config.h"
 #include "memory.h"
 #include "dimmer_service.h"
 
@@ -56,7 +58,7 @@ typedef enum
 /* ------------- Local defines --------------- */
 
 /* Validity signature for default value */
-#define MEM_DEFAULT_SIGNATURE						0x14224499
+#define MEM_DEFAULT_SIGNATURE						0x22224499
 
 /* Signature length in bytes */
 #define MEM_SIGNATURE_LENGTH_BYTES					4

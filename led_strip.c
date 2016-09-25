@@ -42,6 +42,7 @@
 #include "app_util_platform.h"
 #include "app_pwm.h"
 
+#include "config.h"
 #include "memory.h"
 #include "dimmer_service.h"
 #include "led_strip.h"
@@ -50,6 +51,9 @@
 
 
 /* ------------- Local defines --------------- */
+
+/* Memory position: fade percentage field */
+#define FADE_MEM_POSITION				(BLE_DIMMER_CONFIG_CHAR_POS + 0)	/* First location in memory data structure */
 
 /* PWM fade period in ms */
 #define PWM_FADE_PERIOD_MS				100    
@@ -161,12 +165,8 @@ void led_light_init(void)
     pwm2_ready_flag = true;
 
 	/* ATTENTION: fade value is read from memory once during init */
-
 	/* get fade value at init only */
-	fade_percent_value = char_values[MEM_FADE_BYTE_POS];
-
-	/* calculate update counts for fade */
-	fade_count = (uint8_t)(100 / fade_percent_value);
+	fade_percent_value = char_values[FADE_MEM_POSITION];
 }
 
 
@@ -209,6 +209,9 @@ void led_update_light(	uint8_t red_value,
 		green_pwm_step = (int8_t)(((int16_t)(green_pwm_target - green_pwm_value) * fade_percent_value) / 100);
 		blue_pwm_step  = (int8_t)(((int16_t)(blue_pwm_target  - blue_pwm_value)  * fade_percent_value) / 100);
 		white_pwm_step = (int8_t)(((int16_t)(white_pwm_target - white_pwm_value) * fade_percent_value) / 100);
+
+		/* re-calculate update counts for fade */
+		fade_count = (uint8_t)(100 / fade_percent_value);
 	}
 	else
 	{
@@ -220,21 +223,6 @@ void led_update_light(	uint8_t red_value,
 /* Function to manage light periodically */
 void led_manage_light(void)
 {
-#if 1
-	while(false == pwm1_ready_flag);
-	while(app_pwm_channel_duty_set(&PWM1, 0, red_pwm_target) == NRF_ERROR_BUSY);
-
-	while(false == pwm1_ready_flag);
-	while(app_pwm_channel_duty_set(&PWM1, 1, green_pwm_target) == NRF_ERROR_BUSY);
-
-	while(false == pwm2_ready_flag);
-	while(app_pwm_channel_duty_set(&PWM2, 0, blue_pwm_target) == NRF_ERROR_BUSY);
-
-	while(false == pwm2_ready_flag);
-	while(app_pwm_channel_duty_set(&PWM2, 1, white_pwm_target) == NRF_ERROR_BUSY);
-#endif
-
-#if 0
 	/* update PWM until fade count expires. Last run is set directly to target PWM value.
 	   Indeed the target value can not be a multiple of calculated step. */
 	while(fade_count > 0)
@@ -291,7 +279,6 @@ void led_manage_light(void)
 		nrf_delay_ms(PWM_FADE_PERIOD_MS);
 		fade_count--;
 	}
-#endif
 }
 
 

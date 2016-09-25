@@ -42,9 +42,9 @@
 #include "nrf_delay.h"
 #include "nrf_gpio.h"
 #include "softdevice_handler.h"
-#include "app_timer.h"
 #include "bootloader.h"
 
+#include "config.h"
 #include "ble_manager.h"
 #include "dimmer_service.h"
 #include "led_strip.h"
@@ -56,15 +56,6 @@
 
 
 /* ---------------- Local defines --------------------- */
-
-// TODO: consider to unify timers management between all modules
-/* Value of the RTC1 PRESCALER register. */
-#define APP_TIMER_PRESCALER          			0
-#define APP_TIMER_OP_QUEUE_SIZE         		4   
-/* APP timer tick period in ms */  
-#define APP_TIMER_TICK_PERIOD_MS				10000
-/* get APP timer tick count */
-#define APP_TIMER_TICK_COUNT					APP_TIMER_TICKS(APP_TIMER_TICK_PERIOD_MS, APP_TIMER_PRESCALER) 
 
 /* Password for starting DFU Upgrade on char write */
 #define DFU_UPGRADE_CHAR_PASSWORD				0xA9
@@ -79,10 +70,7 @@
 
 /* Macro to set spacial value on GPREGRET register to start bootloader after reset */
 #define SET_REG_VALUE_TO_START_BOOTLOADER()  		(NRF_POWER->GPREGRET = BOOTLOADER_DFU_START)
-
-/* Define timer for idle timeout update */
-APP_TIMER_DEF(tick_timer);    
-
+ 
 
 
 
@@ -94,38 +82,28 @@ const uint8_t default_values[BLE_DIMMER_SERVICE_CHARS_LENGTH] =
 	DEF_FADE_PWM_PERCENT,		/* Light - Fade */
 	0xFF,
 	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
 	0xFF
 };
 
-
-
-
-/* ---------------- Local functions prototype --------------------- */   
-
-static void tick_timer_function(void * p_context);          
-
-
-
-
-/* ---------------- Local functions --------------------- */   
-
-/* ATTENTION: consider to start scanning from adv timeout instead of using this timer */
-/* Tick timer timeout handler function */
-static void tick_timer_function(void * p_context)
-{
-	UNUSED_PARAMETER(p_context);
-
-	/* stop advertising */
-	ble_man_adv_stop();
-
-	/* start scanning */
-	ble_man_scan_start();
-}
+/* Flag to indicate that adv timeout is elapsed */
+static volatile bool adv_timeout = false;
 
 
 
 
 /* ---------------- Exported functions --------------------- */   
+
+/* indicate that advertising timeout is elapsed */
+void app_on_adv_timeout( void )
+{
+	/* set related flag */
+	adv_timeout = true;
+}
+
 
 /* callback on SPECIAL_OP characteristic write */
 void app_on_special_op( uint8_t special_op_byte )
@@ -149,32 +127,26 @@ void app_on_special_op( uint8_t special_op_byte )
 /* callback on connection event */
 void application_on_conn( void )
 {
-	uint32_t err_code;
+	//uint32_t err_code;
 
-	/* stop tick timer */
-	err_code = app_timer_stop(tick_timer);
-	APP_ERROR_CHECK(err_code);
+	/* do nothing at the moment */
 }
 
 
 /* callback on disconnection event */
 void application_on_disconn( void )
 {
-	uint32_t err_code;
+	//uint32_t err_code;
 
 	/* start avertising */
 	ble_man_adv_start();
-
-	/* start tick timer */
-	err_code = app_timer_start(tick_timer, APP_TIMER_TICK_COUNT, NULL);
-	APP_ERROR_CHECK(err_code);
 }
 
 
 /* init application */
 void application_init( void )
 {
-	uint32_t err_code;
+	//uint32_t err_code;
 
 	/* init peripheral connection */
 	ble_man_init();
@@ -195,20 +167,25 @@ void application_init( void )
 
 	/* start avertising */
 	ble_man_adv_start();
-
-	/* init tick timer (for managing timeouts) */
-	err_code = app_timer_create(&tick_timer, APP_TIMER_MODE_SINGLE_SHOT, &tick_timer_function);
-	APP_ERROR_CHECK(err_code);
-
-	/* start tick timer */
-	err_code = app_timer_start(tick_timer, APP_TIMER_TICK_COUNT, NULL);
-	APP_ERROR_CHECK(err_code);
 }
 
 
 /* main application loop */
 void application_run( void )
 {
+	/* if adv timeout is elapsed */
+	if(true == adv_timeout)
+	{	
+		/* clear flag */
+		adv_timeout = false;
+		/* start scanning */
+		ble_man_scan_start();
+	}
+	else
+	{
+		/* wait for adv timeout */
+	}
+	
 	/* manage light */
 	led_manage_light();
 }

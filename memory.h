@@ -30,12 +30,6 @@
 
 
 
-/* ------------- Exported defines --------------- */
-
-/* Fade byte position in the shared memory structure */
-#define MEM_FADE_BYTE_POS			BLE_DIMMER_CONFIG_CHAR_POS
-
-
 /* ------------- Exported functions --------------- */
 
 extern bool memory_is_busy		(void);

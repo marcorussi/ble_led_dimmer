@@ -41,7 +41,7 @@
 #define DIMMER_SERVICE_UUID_TYPE					BLE_UUID_TYPE_VENDOR_BEGIN  
   
 /* CONFIG Characteristic value length in bytes */
-#define BLE_DIMMER_CONFIG_CHAR_LENGTH				4
+#define BLE_DIMMER_CONFIG_CHAR_LENGTH				8
 
 /* Length of SPECIAL_OP characteristic in bytes */
 #define BLE_DIMMER_SPECIAL_OP_CHAR_LENGTH			1	

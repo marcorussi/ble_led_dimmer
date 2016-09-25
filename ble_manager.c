@@ -34,6 +34,7 @@
 #include "app_error.h"
 #include "ble.h"
 #include "ble_hci.h"
+#include "ble_dis.h"
 #include "ble_srv_common.h"
 #include "ble_advdata.h"
 #include "ble_conn_params.h"
@@ -42,6 +43,7 @@
 #include "pstorage.h"
 #include "app_trace.h"
 #include "app_util_platform.h"
+#include "dfu_init.h"
 
 #include "config.h"
 #include "ble_manager.h"
@@ -70,7 +72,7 @@
 #define APP_ADV_INTERVAL                 	100 
 
 /* The advertising timeout (in units of seconds). */
-#define APP_ADV_TIMEOUT_IN_SECONDS      	180                                         
+#define APP_ADV_TIMEOUT_IN_SECONDS      	ADV_TIMEOUT_TO_START_SCAN_S                                        
 
 //TODO: consider to unify these two defines
 /* Value of the RTC1 PRESCALER register */
@@ -109,10 +111,11 @@
 #define MANUF_SERVICE_ID					0x0110	
 
 /* Scanning parameters */    
+/* TODO: consider to move the first 2 following defines to config.h */
 /* Determines scan interval in units of 0.625 millisecond */                                                        
 #define SCAN_INTERVAL           			1600	/* 1000 ms */
  /* Determines scan window in units of 0.625 millisecond */                      
-#define SCAN_WINDOW             			480		/* 300 ms */
+#define SCAN_WINDOW             			800		/* 500 ms */
 /* If 1, performe active scanning (scan requests) */                    
 #define SCAN_ACTIVE             			1 
 /* If 1, ignore unknown devices (non whitelisted) */                              
@@ -123,7 +126,13 @@
 
 
 
-/* ----------------------- Local enums ---------------------- */
+/* ----------------------- Local typedefs ---------------------- */
+
+/* Device serial number integer type */
+typedef uint32_t serial_num_int;
+
+/* Device serial number string type */
+typedef char serial_num_string[12];
 
 /* Adv packet format to scan */
 typedef enum
@@ -184,7 +193,6 @@ static const ble_gap_scan_params_t m_scan_params =
 	.timeout     = SCAN_TIMEOUT
 };
 
-
 /* Preamble of the Adv packet. This string represent a fixed part of the adv packet */
 static const uint8_t preamble_adv[DATA_BYTE_0_POS] = 
 {
@@ -199,6 +207,14 @@ static const uint8_t preamble_adv[DATA_BYTE_0_POS] =
 	(uint8_t)MANUF_SERVICE_ID,			/* service ID lower byte */
 	(uint8_t)(MANUF_SERVICE_ID >> 8)	/* service ID higher byte */
 };
+
+
+
+
+/* ---------------------- Local macros ----------------------- */
+
+/* Define a pointer type to the device serial number stored in the UICR */
+#define UICR_DEVICE_SERIAL_NUM			(*((serial_num_int *)(NRF_UICR_BASE + UICR_CUSTOMER_RESERVED_OFFSET)))
 
 
 
@@ -242,12 +258,13 @@ static void gap_params_init(void)
 
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
 
+	/* set device name in GAP layer */
     err_code = sd_ble_gap_device_name_set(&sec_mode,
                                           (const uint8_t *)DEVICE_NAME,
                                           strlen(DEVICE_NAME));
     APP_ERROR_CHECK(err_code);
 
-    /* TODO: Use an appearance value matching the application's use case. */
+    /* TODO: consider to change the appearance */
     err_code = sd_ble_gap_appearance_set(BLE_APPEARANCE_GENERIC_REMOTE_CONTROL);
     APP_ERROR_CHECK(err_code); 
 
@@ -267,13 +284,42 @@ static void gap_params_init(void)
 static void services_init(void)
 {
 	uint32_t err_code;
+	ble_dis_init_t dis_init_obj;
 	ble_dimmer_init_st dimmer_init;
 
-    /* init DIMMER service */
+	/* init Device Information Service */
+    memset(&dis_init_obj, 0, sizeof(dis_init_obj));
+	/* set device information fields */
+	serial_num_string serial_num_ascii;
+	ble_srv_ascii_to_utf8(&dis_init_obj.hw_rev_str, HW_REVISION);
+	ble_srv_ascii_to_utf8(&dis_init_obj.fw_rev_str, FW_REVISION);
+    ble_srv_ascii_to_utf8(&dis_init_obj.manufact_name_str, MANUFACTURER_NAME);
+	/* set serial number from the UICR */
+	sprintf(serial_num_ascii, "%d", (unsigned int)UICR_DEVICE_SERIAL_NUM);
+	ble_srv_ascii_to_utf8(&dis_init_obj.serial_num_str, serial_num_ascii);
+/*
+	ble_srv_utf8_str_t 	manufact_name_str
+	ble_srv_utf8_str_t 	model_num_str
+	ble_srv_utf8_str_t 	serial_num_str
+	ble_srv_utf8_str_t 	hw_rev_str
+	ble_srv_utf8_str_t 	fw_rev_str
+	ble_srv_utf8_str_t 	sw_rev_str
+	ble_dis_sys_id_t * 	p_sys_id
+	ble_dis_reg_cert_data_list_t * 	p_reg_cert_data_list
+	ble_dis_pnp_id_t * 	p_pnp_id
+	ble_srv_security_mode_t 	dis_attr_md
+*/
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&dis_init_obj.dis_attr_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&dis_init_obj.dis_attr_md.write_perm);
+	/* init Device Info service */
+    err_code = ble_dis_init(&dis_init_obj);
+    APP_ERROR_CHECK(err_code);
+
+    /* init DIMMER service structure */
     memset(&dimmer_init, 0, sizeof(dimmer_init));
 	/* set DIMMER data handler */
     dimmer_init.data_handler = dimmer_data_handler;
-    
+    /* init DIMMER service */
     err_code = ble_dimmer_init(&m_dimmer, &dimmer_init);
     APP_ERROR_CHECK(err_code);
 }
@@ -347,8 +393,9 @@ static void get_advertising_fields(uint8_t *p_data, uint8_t data_length)
 			/* if data flag is different than last one */
 			if(data_flag != last_data_flag)
 			{
+#ifdef LED_DEBUG
 				nrf_gpio_pin_toggle(24);
-	
+#endif
 				/* store last data byte */
 				last_data_flag = data_flag;
 
@@ -409,8 +456,10 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             {
 				/* ATTENTION: consider to start scanning here instead of from application */
 				/* start advertising again */
-				err_code = sd_ble_gap_adv_start(&adv_params);
-				APP_ERROR_CHECK(err_code);
+				//err_code = sd_ble_gap_adv_start(&adv_params);
+				//APP_ERROR_CHECK(err_code);
+				//led_update_light(90,10,100,10);
+				app_on_adv_timeout();
 			}
 			else if (p_gap_evt->params.timeout.src == BLE_GAP_TIMEOUT_SRC_SCAN)
             {
@@ -578,9 +627,13 @@ static void ble_periph_adv_set_data(void)
 /* Function for BLE services init and start advertising */
 void ble_man_init(void)
 {
+	/* init stack */
     ble_stack_init();
+	/* init gap params */
     gap_params_init();
+	/* init services */
     services_init();
+	/* init connection params */
     conn_params_init();
 }
 
@@ -590,6 +643,7 @@ void ble_man_scan_start(void)
 {
 	uint32_t err_code;
 
+	/* start scanning */
     err_code = sd_ble_gap_scan_start(&m_scan_params);
     APP_ERROR_CHECK(err_code);
 }
@@ -608,6 +662,7 @@ void ble_man_adv_start(void)
 {
 	uint32_t err_code;
 
+	/* set advertising data */
 	ble_periph_adv_set_data();
 	
 	/* start advertising */

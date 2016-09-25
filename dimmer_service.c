@@ -43,6 +43,7 @@
 #include "ble_srv_common.h"
 #include "bootloader.h"
 
+#include "config.h"
 #include "dimmer_service.h"
 #include "memory.h"
 #include "application.h"
@@ -115,7 +116,7 @@ static void on_write(ble_dimmer_st * p_dimmer, ble_evt_t * p_ble_evt)
 			/* TODO: consider to send memory result to upper layers */
 			/* update field in the persistent memory */
 			memory_update_field(BLE_DIMMER_CONFIG_CHAR_POS, p_evt_write->data, p_evt_write->len);
-			/* ATTENTION: the new data is not sent to application or any other module */
+			/* ATTENTION: the new data is not sent to application or to any other module */
 		}
 		else if(p_evt_write->handle == p_dimmer->special_op_charac_handles.value_handle)
 		{
