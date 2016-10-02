@@ -385,7 +385,7 @@ static void get_advertising_fields(uint8_t *p_data, uint8_t data_length)
 		/* if adv preamble is as expected */
 		if(0 == memcmp(p_data, &preamble_adv, DATA_BYTE_0_POS))
 		{
-			/* preable is valid. Device found */
+			/* preamble is valid. Device found */
 			/* get interesting data */
 			uint8_t data_flag = p_data[DATA_BYTE_2_POS];
 			/* ATTENTION: everything else is not considered at the moment */

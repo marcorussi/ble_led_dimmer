@@ -1,0 +1,119 @@
+Autore: Marco Russi
+Data: 02/10/2016
+
+
+BLE LED STRIP DIMMER
+
+
+1 - BLE
+1.1 - Remote control from advertising
+1.1.1 - Scan of a remote controller advertising packet
+
+The device scans periodically any eventual control device for retrieving a light command to actuate.
+In case of a peripheral device is found then the advertised packet length is checked to be the expected one.
+In case of positive result, first bytes of the packet are compared with the expected preamble defined 
+in the firware as below:
+
+FIRST_LENGTH_POS,					/* first length */
+ADV_TYPE_FLAGS_POS,					/* adv flags type */
+BR_EDR_NOT_SUPPORTED_POS,			/* BR/EDR not supported */
+SECOND_LENGTH_POS,					/* second length */
+MANUF_DATA_TYPE_POS,				/* manufacturer data type */
+MANUF_ID_BYTE_0_POS,				/* manufacturer ID lower byte */
+MANUF_ID_BYTE_1_POS,				/* manufacturer ID higher byte */
+MANUF_DATA_LENGTH_POS,				/* data length */
+SERVICE_ID_BYTE_0_POS,				/* service ID lower byte */
+SERVICE_ID_BYTE_1_POS,				/* service ID higher byte */
+DATA_BYTE_0_POS,					/* data byte 0 */
+DATA_BYTE_1_POS,					/* data byte 1 */
+DATA_BYTE_2_POS,					/* data byte 2 */
+DATA_BYTE_3_POS,					/* data byte 3 */
+DATA_BYTE_4_POS,					/* data byte 4 */
+DATA_BYTE_5_POS,					/* data byte 5 */
+DATA_BYTE_6_POS,					/* data byte 6 */
+DATA_BYTE_7_POS,					/* data byte 7 */
+CALIB_RSSI_POS,						/* calibrated RSSI */
+
+with the defined values:
+
+0x02,								/* first length */
+ADV_FLAGS_TYPE,						/* adv flags type */
+BR_EDR_NOT_SUPPORTED,				/* BR/EDR not supported */
+(uint8_t)(MANUF_DATA_LENGTH + 4),	/* second length */
+MANUF_DATA_TYPE,					/* manufacturer data type */
+(uint8_t)MANUFACTURER_ID,			/* manufacturer ID lower byte */
+(uint8_t)(MANUFACTURER_ID >> 8),	/* manufacturer ID higher byte */
+MANUF_DATA_LENGTH,					/* manufacturer specific data length */
+(uint8_t)MANUF_SERVICE_ID,			/* service ID lower byte */
+(uint8_t)(MANUF_SERVICE_ID >> 8)	/* service ID higher byte */
+
+The MANUFACTURER_ID is attributed at each company from Bluetooth SIG and in this case it is flash memory defined.
+The SERVICE_ID is also flash memory defined and it is a custom field indicating a specific service implemented by the device. 
+This field is used by other compatible products to understand the behaviour of the device.
+The following 8 bytes are specific to the service ID and represent the shared data between devices that support that service.
+The CALIB_RSSI field is a calibrated value of RSSI in two's complement. It is not used by a scanner device at the moment (TO BE DEFINED). 
+
+1.1.2 - Remote control data
+Advertised data from a remote controller are 8 byte long.
+The defined service ID is the only supported and related data bytes are managed as below:
+
+DATA_BYTE_0_POS: not used 
+DATA_BYTE_1_POS: not used 
+DATA_BYTE_2_POS: any value change means that new light values follow 
+DATA_BYTE_3_POS: new RED value in % (0 - 100) 
+DATA_BYTE_4_POS: new GREEN value in % (0 - 100) 
+DATA_BYTE_5_POS: new BLUE value in % (0 - 100) 
+DATA_BYTE_6_POS: new WHITE value in % (0 - 100) 
+DATA_BYTE_7_POS: not used 
+
+The new light values are immediately updated in the scan result function as soon as the advertising packet is parsed.
+
+
+1.2 - Services
+
+There is only one service available which contains the following characteristics:
+- CONFIG
+- SPECIAL_OP
+The base UUID of the service is: {{0x8A, 0xAF, 0xA6, 0xC2, 0x3A, 0x32, 0x8F, 0x84, 0x75, 0x4F, 0xF3, 0x02, 0x01, 0x50, 0x65, 0x20}} 
+and the two characteristics CONFIG and SPECIAL_OP have an UUID increment of respectively 0x09 and 0x0F. 
+
+1.2.1 - CONFIG characteristic
+This characteristic is 8 byte long and has read and write access. Default values structure in application.c shows how the 8 bytes are defined:
+
+DEF_FADE_PWM_PERCENT: Light - Fade
+0xFF: not used
+0xFF: not used
+0xFF: not used
+0xFF: not used
+0xFF: not used
+0xFF: not used
+0xFF: not used
+
+The first byte only is used at the moment. It is the fade effect value varying from 0% to 200% and it represents the amount of PWM percentage to apply at each fade step which fixed at 100 ms (default value is 50%). Upon write operation the new value is stored in the persistent flash memory and it will read and used at the next power cycle. 
+Indeed the value is set once in light module initialisation routine. 
+
+1.2.2 - SPECIAL OP characteristic
+This characteristic is 1 byte long and can be written only. Upon write command the new value is sent to application module and managed accordingly. Any special command can be implemented. The only valid command implemented at the moment is:
+
+DFU_UPGRADE_CHAR_PASSWORD: 0xA9
+
+used for entering in bootloader mode to perform a firmware upgrade.
+
+
+
+2 - Light management
+The module manages 4 PWM channels for respectively RGBW colours of an LED strip. Every time a colour is requested, the algorithm perform a soft change by calculating a PWM ramp starting from the current PWM value to the target one. This fade effect has a fixed speed (ramp inclination) set at module initialisation from the stored value in persistent memory. Indeed the fade percentage value is loaded once in the led_light_init() function. In case of a new value is written in the related characteristic, it won't be used until next power cycle (CONSIDER TO CHANGE THIS BEHAVIOUR).
+
+
+
+
+
+
+
+
+
+
+
+
+
+

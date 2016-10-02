@@ -1,2 +1,0 @@
-
-1) modify fade in order to not start always from 0 but according to actual light value (PWM)

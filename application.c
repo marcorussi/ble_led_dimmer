@@ -79,7 +79,8 @@ const uint8_t default_values[BLE_DIMMER_SERVICE_CHARS_LENGTH] =
 	0xFF,
 	0xFF,
 	0xFF,
-	0xFF
+	0xFF,
+	0xFF	/* special op. Not relevant since it is a write only characteristic */
 };
 
 /* Flag to indicate that adv timeout is elapsed */

@@ -56,8 +56,8 @@
 /* The UUID of the CONFIG Characteristic */
 #define BLE_UUID_DIMMER_CONFIG_CHAR				0x0009   
 
-/* The UUID of the DFU UPGRADE Characteristic */
-#define BLE_UUID_DIMMER_DFU_CHAR				0x000F   
+/* The UUID of the SPECIAL OP Characteristic */
+#define BLE_UUID_DIMMER_SPECIAL_OP_CHAR			0x000F   
 
 /* User vendor specific UUID */
 #define DIMMER_BASE_UUID                  		{{0x8A, 0xAF, 0xA6, 0xC2, 0x3A, 0x32, 0x8F, 0x84, 0x75, 0x4F, 0xF3, 0x02, 0x01, 0x50, 0x65, 0x20}} 
@@ -273,7 +273,7 @@ uint32_t ble_dimmer_init(ble_dimmer_st * p_dimmer, const ble_dimmer_init_st * p_
         return err_code;
     }
 
-	/* Add the DFU UPGRADE Characteristic - Read/Write */
+	/* Add the CONFIG Characteristic - Read/Write */
     err_code = char_add(p_dimmer, 
 						&p_dimmer->cfg_charac_handles, 
 						true, 
@@ -292,7 +292,7 @@ uint32_t ble_dimmer_init(ble_dimmer_st * p_dimmer, const ble_dimmer_init_st * p_
 						&p_dimmer->special_op_charac_handles, 
 						false, 
 						BLE_DIMMER_SPECIAL_OP_CHAR_LENGTH, 
-						BLE_UUID_DIMMER_DFU_CHAR, 
+						BLE_UUID_DIMMER_SPECIAL_OP_CHAR, 
 						(uint8_t *)&char_values[BLE_DIMMER_SPECIAL_OP_CHAR_POS]);
     if (err_code != NRF_SUCCESS)
     {
