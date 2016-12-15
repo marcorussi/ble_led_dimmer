@@ -1,13 +1,13 @@
 # ble_led_dimmer
-A RGBW LED dimmer over BLE based on Nordic nrf51 chipset. Developed under Ubuntu environment using a nrf51 PCA10028 development kit. The firmware is based on S130 from Nordic SDK 10.x.x.
+A RGBW LED dimmer over BLE based on Nordic nrf51 chipset. Developed under Ubuntu environment using a nrf51 PCA10028 development kit. The firmware is based on S130 from Nordic SDK 11.x.x.
 
-This firmware allows to control a RGBW LED strip through a custom service and a scanner GAP role.
+This firmware allows to control a RGBW LED strip by scanning a compatible advertising packet from another device.
 
 
 **Install**
 
 Download Segger JLink tool from https://www.segger.com/jlink-software.html. Unpack it and move it to /opt directory.
-Download the Nordic SDK from http://developer.nordicsemi.com/nRF5_SDK/nRF51_SDK_v10.x.x/. Unpack it and move it to /opt directory.
+Download the Nordic SDK from http://developer.nordicsemi.com/nRF5_SDK/nRF5_SDK_v11.x.x/. Unpack it and move it to /opt directory.
 
 Clone this repo in your projects directory:
 
@@ -20,7 +20,7 @@ Verify and modify following names and paths as required according to your ARM GC
 ```
 PROJECT_NAME := ble_led_dimmer
 NRFJPROG_PATH := ./tools
-SDK_PATH := /opt/nRF51_SDK_10.0.0_dc26b5e
+SDK_PATH := /opt/nRF5_SDK_11.0.0_89a8197
 LINKER_SCRIPT := led_dimmer_nrf51.ld
 GNU_INSTALL_ROOT := /home/marco/ARMToolchain/gcc-arm-none-eabi-4_9-2015q2
 GNU_VERSION := 4.9.3
