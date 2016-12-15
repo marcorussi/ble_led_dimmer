@@ -3,6 +3,8 @@ A RGBW LED dimmer over BLE based on Nordic nrf51 chipset. Developed under Ubuntu
 
 This firmware allows to control a RGBW LED strip by scanning a compatible advertising packet from another device.
 
+Refer to doc.txt for more details.
+
 
 **Install**
 
